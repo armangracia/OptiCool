@@ -17,7 +17,7 @@ const MockupDashboard = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mockup Dashboard</Text>
-      <Text>This is a mock-up dashboard for regular users.</Text>
+      <Text>This is a mock-up dashboard for regular users of the mobile app.</Text>
       <Button
         mode="contained"
         onPress={handleLogout}
