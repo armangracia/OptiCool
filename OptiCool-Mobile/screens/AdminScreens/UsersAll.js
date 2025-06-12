@@ -1,16 +1,17 @@
-import { Alert, ScrollView, View } from 'react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Text, DataTable, IconButton } from 'react-native-paper';
-import axios from 'axios';
-import baseURL from '../../assets/common/baseUrl';
-import { useSelector } from 'react-redux';
-import { useFocusEffect } from '@react-navigation/native';
+import { Alert, ScrollView, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { Text, DataTable, IconButton, Button } from "react-native-paper";
+import axios from "axios";
+import baseURL from "../../assets/common/baseUrl";
+import { useSelector } from "react-redux";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function UsersAll() {
   const [page, setPage] = useState(0);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
   const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const { token } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -22,10 +23,11 @@ export default function UsersAll() {
       const { data } = await axios.get(`${baseURL}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(data.users);
+      setUsers(data.users.filter((u) => u.isApproved));
+      setPendingUsers(data.users.filter((u) => !u.isApproved));
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to fetch users.');
+      Alert.alert("Error", "Failed to fetch users.");
     }
   };
 
@@ -34,11 +36,11 @@ export default function UsersAll() {
       await axios.delete(`${baseURL}/users/delete/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      Alert.alert('Success', 'User successfully deleted.');
+      Alert.alert("Success", "User successfully deleted.");
       fetchUsers();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to delete user.');
+      Alert.alert("Error", "Failed to delete user.");
     }
   };
 
@@ -51,35 +53,44 @@ export default function UsersAll() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      Alert.alert('Success', 'Role updated successfully.');
+      Alert.alert("Success", "Role updated successfully.");
       fetchUsers();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to update role.');
+      Alert.alert("Error", "Failed to update role.");
+    }
+  };
+
+  const approveUser = async (id, isApproved) => {
+    try {
+      await axios.put(
+        `${baseURL}/users/approve/${id}`,
+        { isApproved },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      Alert.alert("Success", `User ${isApproved ? "approved" : "declined"} successfully.`);
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to update user status.");
     }
   };
 
   const handleDelete = (id) => {
-    Alert.alert(
-      'Confirm Deletion',
-      'Are you sure you want to delete this user?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes', onPress: () => deleteUser(id) },
-      ]
-    );
+    Alert.alert("Confirm Deletion", "Are you sure you want to delete this user?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Yes", onPress: () => deleteUser(id) },
+    ]);
   };
 
   const handleUpdateRole = (id) => {
-    Alert.alert(
-      'Update Role',
-      'Select the new role for this user:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Admin', onPress: () => updateRole(id, 'admin') },
-        { text: 'User', onPress: () => updateRole(id, 'user') },
-      ]
-    );
+    Alert.alert("Update Role", "Select the new role for this user:", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Admin", onPress: () => updateRole(id, "admin") },
+      { text: "User", onPress: () => updateRole(id, "user") },
+    ]);
   };
 
   useFocusEffect(
@@ -89,8 +100,8 @@ export default function UsersAll() {
   );
 
   return (
-    <View style={{ margin: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>Users</Text>
+    <ScrollView style={{ margin: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Users</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <DataTable style={{ width: 600 }}>
@@ -101,32 +112,25 @@ export default function UsersAll() {
             <DataTable.Title numeric>Actions</DataTable.Title>
           </DataTable.Header>
 
-          {users.slice(page * itemsPerPage, (page + 1) * itemsPerPage).map((user) => (
-            <DataTable.Row key={user._id}>
-              <DataTable.Cell>{user.username}</DataTable.Cell>
-              <DataTable.Cell>{user.email}</DataTable.Cell>
-              <DataTable.Cell>{user.role}</DataTable.Cell>
-              <DataTable.Cell numeric>
-                <IconButton
-                  icon="account-edit"
-                  onPress={() => handleUpdateRole(user._id)}
-                />
-                <IconButton
-                  icon="delete"
-                  onPress={() => handleDelete(user._id)}
-                />
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
+          {users
+            .slice(page * itemsPerPage, (page + 1) * itemsPerPage)
+            .map((user) => (
+              <DataTable.Row key={user._id}>
+                <DataTable.Cell>{user.username}</DataTable.Cell>
+                <DataTable.Cell>{user.email}</DataTable.Cell>
+                <DataTable.Cell>{user.role}</DataTable.Cell>
+                <DataTable.Cell numeric>
+                  <IconButton icon="account-edit" onPress={() => handleUpdateRole(user._id)} />
+                  <IconButton icon="delete" onPress={() => handleDelete(user._id)} />
+                </DataTable.Cell>
+              </DataTable.Row>
+            ))}
 
           <DataTable.Pagination
             page={page}
             numberOfPages={Math.ceil(users.length / itemsPerPage)}
             onPageChange={(newPage) => setPage(newPage)}
-            label={`${page * itemsPerPage + 1}-${Math.min(
-              (page + 1) * itemsPerPage,
-              users.length
-            )} of ${users.length}`}
+            label={`${page * itemsPerPage + 1}-${Math.min((page + 1) * itemsPerPage, users.length)} of ${users.length}`}
             numberOfItemsPerPageList={numberOfItemsPerPageList}
             numberOfItemsPerPage={itemsPerPage}
             onItemsPerPageChange={onItemsPerPageChange}
@@ -134,6 +138,35 @@ export default function UsersAll() {
           />
         </DataTable>
       </ScrollView>
-    </View>
+
+      {/* Pending Users Section */}
+      {pendingUsers.length > 0 && (
+        <>
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginVertical: 20 }}>Pending Users</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <DataTable style={{ width: 600 }}>
+              <DataTable.Header>
+                <DataTable.Title>Name</DataTable.Title>
+                <DataTable.Title>Email</DataTable.Title>
+                <DataTable.Title numeric>Actions</DataTable.Title>
+              </DataTable.Header>
+
+              {pendingUsers.map((user) => (
+                <DataTable.Row key={user._id}>
+                  <DataTable.Cell>{user.username}</DataTable.Cell>
+                  <DataTable.Cell>{user.email}</DataTable.Cell>
+                  <DataTable.Cell numeric>
+                    <Button onPress={() => approveUser(user._id, true)}>Approve</Button>
+                    <Button onPress={() => approveUser(user._id, false)} textColor="red">
+                      Decline
+                    </Button>
+                  </DataTable.Cell>
+                </DataTable.Row>
+              ))}
+            </DataTable>
+          </ScrollView>
+        </>
+      )}
+    </ScrollView>
   );
 }

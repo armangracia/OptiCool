@@ -68,7 +68,6 @@ const AdminDashboard = () => {
   ];
 
   return (
-    
     <View style={styles.dashboard}>
       {/* Header */}
       <View style={styles.header}>
@@ -154,7 +153,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Adjust to space between for alignment
+    justifyContent: 'space-between',
     marginBottom: 20,
   },
   button: {
@@ -169,26 +168,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   menu: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: 'column', // Change to column for vertical layout
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',   // Stretch to full width
   },
   menuBox: {
-    width: (width - 60) / 2,
-    height: 120,
+    width: '100%',           // Full width
+    height: 80,              // Shorter height for vertical list
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 15,        // Less margin for vertical spacing
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    flexDirection: 'row',    // Icon and text side by side
+    paddingHorizontal: 20,
   },
   icon: {
-    fontSize: 40,
-    marginBottom: 10,
+    fontSize: 32,
+    marginRight: 20,         // Space between icon and text
     color: '#fff',
   },
   dashboardText: {
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end', // Align buttons to the right
   },
   menuText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
   },
