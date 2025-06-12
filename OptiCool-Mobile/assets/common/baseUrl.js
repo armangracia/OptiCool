@@ -4,8 +4,8 @@ let baseURL = '';
 
 {
     Platform.OS == 'android'
-        ? baseURL = 'http://192.168.48.74:4000/api/v1'
-        : baseURL = 'http://192.168.48.74:4000/api/v1'
+        ? baseURL = 'http://192.168.100.7:4000/api/v1'
+        : baseURL = 'http://192.168.100.7:4000/api/v1'
 }
 
     
