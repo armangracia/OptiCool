@@ -24,43 +24,22 @@ const ElectricityUsage = () => {
     fetchUsageData();
   }, []);
 
-  // const fetchUsageData = async () => {
-  //   try {
-  //     const weeklyUsage = await dmt3API.getWeeklyUsageAPI();
-  //     setWeeklyData(weeklyUsage);
-  //     const monthlyUsage = await dmt3API.getMonthlyUsageAPI();
-  //     setMonthlyData(monthlyUsage);
-  //   } catch (error) {
-  //     console.error("Error fetching usage data:", error);
-  //   }
-  // };
-
   const fetchUsageData = async () => {
     try {
       const timeLabels = [
-        "8 AM",
-        "9 AM",
-        "10 AM",
-        "11 AM",
-        "12 PM",
-        "1 PM",
-        "2 PM",
-        "3 PM",
-        "4 PM",
-        "5 PM",
-        "6 PM",
-        "7 PM",
-        "8 PM",
+        "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
+        "1 PM", "2 PM", "3 PM", "4 PM", "5 PM",
+        "6 PM", "7 PM", "8 PM",
       ];
 
       setWeeklyData({
         labels: timeLabels,
-        values: [], // No power consumption values yet
+        values: [], // Placeholder for actual data
       });
 
       setMonthlyData({
         labels: timeLabels,
-        values: [], // No power consumption values yet
+        values: [], // Placeholder for actual data
       });
     } catch (error) {
       console.error("Error fetching usage data:", error);
@@ -68,55 +47,57 @@ const ElectricityUsage = () => {
   };
 
   const renderChart = (
-  labels,
-  data,
-  backgroundColor,
-  gradientFrom,
-  gradientTo
-) => (
-  <View style={styles.chartContainer}>
-    <LineChart
-      data={{
-        labels: labels.length ? labels : ["No Data"],
-        datasets: [{ data: data.length ? data : [0] }],
-      }}
-      width={300} // Match tab box width
-      height={300}
-      yAxisSuffix=" kWh"
-      verticalLabelRotation={45}
-      chartConfig={{
-        backgroundColor: backgroundColor,
-        backgroundGradientFrom: gradientFrom,
-        backgroundGradientTo: gradientTo,
-        decimalPlaces: 2,
-        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-        propsForLabels: {
-          textAnchor: "start",
-          fontSize: 10,
-        },
-      }}
-      style={styles.chart}
-    />
-  </View>
-);
-
+    labels,
+    data,
+    backgroundColor,
+    gradientFrom,
+    gradientTo
+  ) => (
+    <View style={styles.chartContainer}>
+      <LineChart
+        data={{
+          labels: labels.length ? labels : ["No Data"],
+          datasets: [{ data: data.length ? data : [0] }],
+        }}
+        width={300}
+        height={300}
+        yAxisSuffix=" kWh"
+        verticalLabelRotation={45}
+        chartConfig={{
+          backgroundColor,
+          backgroundGradientFrom: gradientFrom,
+          backgroundGradientTo: gradientTo,
+          decimalPlaces: 2,
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          propsForLabels: {
+            textAnchor: "start",
+            fontSize: 10,
+          },
+        }}
+        style={styles.chart}
+      />
+    </View>
+  );
 
   const menuItems = [
-    {
-      icon: "tachometer",
-      title: "Usage Tracker",
-      navigateTo: "UsageTracking",
-    },
-    {
-      icon: "cloud",
-      title: "Humidity Report",
-    },
-    {
-      icon: "thermometer-half",
-      title: "Temperature Report",
-    },
-  ];
+  {
+    icon: "tachometer",
+    title: "Usage Tracker",
+    navigateTo: "UsageTracking",
+  },
+  {
+    icon: "cloud",
+    title: "Humidity Report",
+    navigateTo: "HumidityUsage", 
+  },
+  {
+    icon: "thermometer-half",
+    title: "Temperature Report",
+    navigateTo: "TemperatureUsage", 
+  },
+];
+
 
   const handleCardPress = (item) => {
     setSelectedItem(item);
@@ -196,7 +177,7 @@ const ElectricityUsage = () => {
                   style={styles.detailButton}
                   onPress={() =>
                     navigation.navigate("UsageNavigations", {
-                      screen: "UsageTracking",
+                      screen: item.navigateTo,
                     })
                   }
                 >
@@ -233,7 +214,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ebedf0",
     padding: 16,
   },
-  
   tabBox: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -243,7 +223,7 @@ const styles = StyleSheet.create({
     padding: 5,
     marginTop: 40,
     width: 300,
-    alignSelf: "center", // Center horizontally within the parent container
+    alignSelf: "center",
   },
   tabButton: {
     flex: 1,
@@ -265,6 +245,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16,
     alignSelf: "center",
+    marginBottom: 20,
   },
   rectangle: {
     backgroundColor: "#ffffff",

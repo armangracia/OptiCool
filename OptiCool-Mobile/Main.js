@@ -9,6 +9,8 @@ import { StatusBar } from "react-native";
 import UsageNavigations from "./navigators/UsageNavigations"; // Stack for usage-related screens
 import MenuNavigation from "./navigators/MenuNavigations"; // Stack for menu-related screens
 import MockupDashboard from "./screens/UserScreens/MockupDashboard"; // Import the mock-up dashboard screen
+import HumidityUsage from "./screens/PowerManagement/HumidityUsage";
+import TemperatureUsage from "./screens/PowerManagement/TemperatureUsage";
 
 // Other individual screens
 import NotifScreen from "./screens/MenuScreens/NotifScreen";
@@ -56,6 +58,9 @@ export default function Main() {
           <Stack.Screen name="CreatePosts" component={CreatePosts} />
           <Stack.Screen name="EditPosts" component={EditPosts} />
           <Stack.Screen name="PostList" component={PostList} />
+          <Stack.Screen name="HumidityUsage" component={HumidityUsage} />
+          <Stack.Screen name="TemperatureUsage" component={TemperatureUsage} />
+
           <Stack.Screen
                 name="HelpDetails"
                 component={HelpDetails}

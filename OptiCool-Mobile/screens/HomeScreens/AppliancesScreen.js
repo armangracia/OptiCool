@@ -147,7 +147,7 @@ const AppliancesScreen = () => {
       <View style={styles.row}>
         <View style={getCardStyle(isExhaustInwardsOn)}>
           <Image
-            source={require("../../assets/light-bulb.png")} // Add your image path here
+            source={require("../../assets/fan.png")} // Add your image path here
             style={getImageStyle(isExhaustInwardsOn)}
           />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -167,7 +167,7 @@ const AppliancesScreen = () => {
 
         <View style={getCardStyle(isExhaustOutwardsOn)}>
           <Image
-            source={require("../../assets/light-bulb.png")} // Add your image path here
+            source={require("../../assets/fan.png")} // Add your image path here
             style={getImageStyle(isExhaustOutwardsOn)}
           />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
