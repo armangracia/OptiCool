@@ -24,32 +24,66 @@ const ElectricityUsage = () => {
     fetchUsageData();
   }, []);
 
+  // const fetchUsageData = async () => {
+  //   try {
+  //     const weeklyUsage = await dmt3API.getWeeklyUsageAPI();
+  //     setWeeklyData(weeklyUsage);
+  //     const monthlyUsage = await dmt3API.getMonthlyUsageAPI();
+  //     setMonthlyData(monthlyUsage);
+  //   } catch (error) {
+  //     console.error("Error fetching usage data:", error);
+  //   }
+  // };
+
   const fetchUsageData = async () => {
     try {
-      const weeklyUsage = await dmt3API.getWeeklyUsageAPI();
-      setWeeklyData(weeklyUsage);
-      const monthlyUsage = await dmt3API.getMonthlyUsageAPI();
-      setMonthlyData(monthlyUsage);
+      const timeLabels = [
+        "8 AM",
+        "9 AM",
+        "10 AM",
+        "11 AM",
+        "12 PM",
+        "1 PM",
+        "2 PM",
+        "3 PM",
+        "4 PM",
+        "5 PM",
+        "6 PM",
+        "7 PM",
+        "8 PM",
+      ];
+
+      setWeeklyData({
+        labels: timeLabels,
+        values: [], // No power consumption values yet
+      });
+
+      setMonthlyData({
+        labels: timeLabels,
+        values: [], // No power consumption values yet
+      });
     } catch (error) {
       console.error("Error fetching usage data:", error);
     }
   };
 
   const renderChart = (
-    labels,
-    data,
-    backgroundColor,
-    gradientFrom,
-    gradientTo
-  ) => (
+  labels,
+  data,
+  backgroundColor,
+  gradientFrom,
+  gradientTo
+) => (
+  <View style={styles.chartContainer}>
     <LineChart
       data={{
         labels: labels.length ? labels : ["No Data"],
         datasets: [{ data: data.length ? data : [0] }],
       }}
-      width={Dimensions.get("window").width - 32}
+      width={300} // Match tab box width
       height={300}
       yAxisSuffix=" kWh"
+      verticalLabelRotation={45}
       chartConfig={{
         backgroundColor: backgroundColor,
         backgroundGradientFrom: gradientFrom,
@@ -57,10 +91,16 @@ const ElectricityUsage = () => {
         decimalPlaces: 2,
         color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
         labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        propsForLabels: {
+          textAnchor: "start",
+          fontSize: 10,
+        },
       }}
       style={styles.chart}
     />
-  );
+  </View>
+);
+
 
   const menuItems = [
     {
@@ -144,12 +184,21 @@ const ElectricityUsage = () => {
         <TouchableOpacity onPress={() => handleCardPress(item)}>
           <View style={styles.rectangle}>
             <View style={styles.menuItem}>
-              <Icon name={item.icon} size={24} color="black" style={styles.icon} />
+              <Icon
+                name={item.icon}
+                size={24}
+                color="black"
+                style={styles.icon}
+              />
               <Text style={styles.menuText}>{item.title}</Text>
               {item.navigateTo && (
                 <TouchableOpacity
                   style={styles.detailButton}
-                  onPress={() => navigation.navigate("UsageNavigations", { screen: "UsageTracking" })}
+                  onPress={() =>
+                    navigation.navigate("UsageNavigations", {
+                      screen: "UsageTracking",
+                    })
+                  }
                 >
                   <Text style={styles.detailText}>Details</Text>
                 </TouchableOpacity>
@@ -162,7 +211,9 @@ const ElectricityUsage = () => {
         selectedItem && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{selectedItem.title}</Text>
-            <Text style={styles.cardContent}>Additional details about {selectedItem.title}...</Text>
+            <Text style={styles.cardContent}>
+              Additional details about {selectedItem.title}...
+            </Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setSelectedItem(null)}
@@ -182,6 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ebedf0",
     padding: 16,
   },
+  
   tabBox: {
     flexDirection: "row",
     justifyContent: "space-around",

@@ -180,11 +180,26 @@ const turnOffDevice = async (device = "none", applianceStatus) => {
 }
 
 
-const getPowerConsumptionAPI = async (startDate, endDate) => {
-    const { data } = await axios.get(`${dmtUrl}/power_consumption_data?start_date=${startDate}&end_date=${endDate}`);
-    console.log(data)
-    return data;
-}
+// const getPowerConsumptionAPI = async (startDate, endDate) => {
+//     const { data } = await axios.get(`${dmtUrl}/power_consumption_data?start_date=${startDate}&end_date=${endDate}`);
+//     console.log(data)
+//     return data;
+// }
+
+const getPowerConsumptionAPI = async () => {
+    const earliestDate = "2024-08-01";
+    const today = new Date().toISOString().split("T")[0];
+
+    try {
+        const { data } = await axios.get(`${dmtUrl}/power_consumption_data?start_date=${earliestDate}&end_date=${today}`);
+        console.log(data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching power consumption data:", error);
+        return null;
+    }
+};
+
 
 const getWeeklyUsageAPI = async () => {
     try {
