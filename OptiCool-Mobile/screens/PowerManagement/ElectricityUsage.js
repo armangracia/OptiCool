@@ -10,8 +10,6 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
-import DeviceInfo from "./DeviceInfo";
-import dmt3API from "../../services/dmt3API"; // Import the API
 
 const ElectricityUsage = () => {
   const [activeTab, setActiveTab] = useState("weekly");
@@ -34,12 +32,12 @@ const ElectricityUsage = () => {
 
       setWeeklyData({
         labels: timeLabels,
-        values: [], // Placeholder for actual data
+        values: [], // Add actual data if available
       });
 
       setMonthlyData({
         labels: timeLabels,
-        values: [], // Placeholder for actual data
+        values: [], // Add actual data if available
       });
     } catch (error) {
       console.error("Error fetching usage data:", error);
@@ -81,26 +79,36 @@ const ElectricityUsage = () => {
   );
 
   const menuItems = [
-  {
-    icon: "tachometer",
-    title: "Usage Tracker",
-    navigateTo: "UsageTracking",
-  },
-  {
-    icon: "cloud",
-    title: "Humidity Report",
-    navigateTo: "HumidityUsage", 
-  },
-  {
-    icon: "thermometer-half",
-    title: "Temperature Report",
-    navigateTo: "TemperatureUsage", 
-  },
-];
-
+    {
+      icon: "tachometer",
+      title: "Usage Tracker",
+      navigateTo: "UsageTracking",
+      from: "UsageNavigations",
+    },
+    {
+      icon: "cloud",
+      title: "Humidity Report",
+      navigateTo: "HumidityUsage",
+      from: null, // Top-level
+    },
+    {
+      icon: "thermometer-half",
+      title: "Temperature Report",
+      navigateTo: "TemperatureUsage",
+      from: null, // Top-level
+    },
+  ];
 
   const handleCardPress = (item) => {
     setSelectedItem(item);
+  };
+
+  const handleNavigate = (item) => {
+    if (item.from) {
+      navigation.navigate(item.from, { screen: item.navigateTo });
+    } else {
+      navigation.navigate(item.navigateTo);
+    }
   };
 
   return (
@@ -175,11 +183,7 @@ const ElectricityUsage = () => {
               {item.navigateTo && (
                 <TouchableOpacity
                   style={styles.detailButton}
-                  onPress={() =>
-                    navigation.navigate("UsageNavigations", {
-                      screen: item.navigateTo,
-                    })
-                  }
+                  onPress={() => handleNavigate(item)}
                 >
                   <Text style={styles.detailText}>Details</Text>
                 </TouchableOpacity>
