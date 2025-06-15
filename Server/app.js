@@ -18,7 +18,9 @@ const postRoutes = require('./routes/postRoutes');
 const powerConsumptionRoutes = require('./routes/powerConsumptionRoutes'); // Import power consumption routes
 // const roomRoutes = require('./routes/roomRoutes');
 // const statusRoutes = require('./routes/statusRoutes');
+const insideHumidityRoutes = require("./routes/insideHumidity");
 
+app.use("/inside-humidity", insideHumidityRoutes);
 
 // app.use('/', statusRoutes);
 app.use('/api/v1/users', userRoutes);

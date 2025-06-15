@@ -1,188 +1,273 @@
-import React, { useState, useEffect } from 'react';
-import { View, Dimensions, ScrollView, Text } from 'react-native';
-import { BarChart } from 'react-native-chart-kit'; // Use BarChart instead of LineChart
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Generate dummy humidity data between 30% and 70% without decimals
-const generateDummyHumidityData = () => {
-    const dummyData = [];
-    const totalDays = 7; 
-    const hoursPerDay = 10; 
-
-    for (let day = 1; day <= totalDays; day++) {
-        const hourlyHumidityInside = [];
-        const hourlyHumidityOutside = [];
-        for (let hour = 1; hour <= hoursPerDay; hour++) {
-            hourlyHumidityInside.push(Math.floor(Math.random() * (51 - 30) + 30)); // Random inside humidity between 30 to 70%
-            hourlyHumidityOutside.push(Math.floor(Math.random() * (51 - 30) + 30)); // Random outside humidity between 30 to 70%
-        }
-        dummyData.push({
-            date: new Date(2024, 0, day), // Assuming data starts from Jan 1, 2024
-            hourlyHumidityInside: hourlyHumidityInside,
-            hourlyHumidityOutside: hourlyHumidityOutside,
-        });
-    }
-    return dummyData;
-};
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { BarChart } from "react-native-chart-kit";
+import { Dimensions } from "react-native";
+import axios from "axios";
+import baseUrl from "../../assets/common/baseUrl";
 
 const HumidityUsage = () => {
-    const data = generateDummyHumidityData();
-    const dailyHumidityInside = data[0].hourlyHumidityInside;
-    const dailyHumidityOutside = data[0].hourlyHumidityOutside;
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [openStartPicker, setOpenStartPicker] = useState(false);
+  const [openEndPicker, setOpenEndPicker] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    return (
-        <SafeAreaView>
-            <ScrollView>
+  const [humidityData, setHumidityData] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentData = humidityData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(humidityData.length / itemsPerPage);
 
-            <Text style={{ fontSize: 24, marginVertical: 8, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 }}>HUMIDITY REPORT</Text>
-                <Text style={{ fontSize: 18, marginVertical: 8, fontWeight: 'bold', marginLeft: 10  }}>Daily Inside Humidity</Text>
-                
-                <ScrollView horizontal>
-                    <BarChart
-                        data={{
-                            labels: Array.from({ length: dailyHumidityInside.length }, (_, i) => `H${i + 1}`),
-                            datasets: [
-                                {
-                                    data: dailyHumidityInside,
-                                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, 
-                                },
-                            ],
-                        }}
-                        width={Dimensions.get('window').width * 1.5} 
-                        height={300}
-                        fromZero={true} // Ensure the y-axis starts from zero
-                        yAxisSuffix="%"
-                        chartConfig={{
-                            backgroundColor: '#002569',
-                            backgroundGradientFrom: '#4f8bf9',
-                            backgroundGradientTo: '#cff7fa',
-                            decimalPlaces: 0, // No decimals
-                            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Inside bars color black
-                            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        }}
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16,
-                            marginLeft: 16, // Adding margin to the left
-                            marginRight: 16, // Adding margin to the right
-                            padding: 2, // Adding padding inside the chart area
-                        }}
-                    />
-                </ScrollView>
+  // DUMMY DATA for the chart
+  const chartLabels = [
+    "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
+    "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"
+  ];
+  const humidityValues = [65, 67, 68, 70, 72, 71, 69, 66, 64, 62];
 
-                {/* Label for daily outside humidity */}
-                <Text style={{ fontSize: 18, marginVertical: 8, fontWeight: 'bold', marginLeft: 10  }}>Daily Outside Humidity</Text>
-                
-                {/* Daily Outside Humidity Bar Chart */}
-                <ScrollView horizontal>
-                    <BarChart
-                        data={{
-                            labels: Array.from({ length: dailyHumidityOutside.length }, (_, i) => `H${i + 1}`),
-                            datasets: [
-                                {
-                                    data: dailyHumidityOutside,
-                                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Outside humidity bars black
-                                },
-                            ],
-                        }}
-                        width={Dimensions.get('window').width * 1.5} // Make the chart wider to enable scrolling
-                        height={300}
-                        fromZero={true} // Ensure the y-axis starts from zero
-                        yAxisSuffix="%"
-                        chartConfig={{
-                            backgroundColor: '#690000',
-                            backgroundGradientFrom: '#ab4444',
-                            backgroundGradientTo: '#f7facf',
-                            decimalPlaces: 0, // No decimals
-                            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Outside bars color black
-                            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        }}
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16,
-                            marginLeft: 16, // Adding margin to the left
-                            marginRight: 16, // Adding margin to the right
-                            padding: 8, // Adding padding inside the chart area
-                        }}
-                    />
-                </ScrollView>
+  useEffect(() => {
+    console.log("Component mounted, fetching initial data...");
+    fetchHumidityData();
+  }, []);
 
-                {/* Weekly Inside Humidity */}
-                <Text style={{ fontSize: 18, marginVertical: 8, fontWeight: 'bold', marginLeft: 10  }}>Weekly Inside Humidity</Text>
-                <ScrollView horizontal>
-                    <BarChart
-                        data={{
-                            labels: data.map((_, index) => `Day ${index + 1}`),
-                            datasets: [
-                                {
-                                    data: data.map(dayData => {
-                                        return Math.floor(dayData.hourlyHumidityInside.reduce((a, b) => a + b, 0) / dayData.hourlyHumidityInside.length); // No decimal values
-                                    }),
-                                    color: () => `rgba(0, 0, 0, 1)` // Inside humidity bars black
-                                },
-                            ],
-                        }}
-                        width={Dimensions.get('window').width * 1.5} // Make the chart wider to enable scrolling
-                        height={300}
-                        fromZero={true} // Ensure the y-axis starts from zero
-                        yAxisSuffix="%"
-                        chartConfig={{
-                            backgroundColor: '#002569',
-                            backgroundGradientFrom: '#4f8bf9',
-                            backgroundGradientTo: '#cff7fa',
-                            decimalPlaces: 0, // No decimals
-                            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Inside bars color black
-                            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        }}
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16,
-                            marginLeft: 16, // Adding margin to the left
-                            marginRight: 16, // Adding margin to the right
-                            padding: 8, // Adding padding inside the chart area
-                        }}
-                    />
-                </ScrollView>
-
-                {/* Weekly Outside Humidity */}
-                <Text style={{ fontSize: 18, marginVertical: 8, fontWeight: 'bold', marginLeft: 10  }}>Weekly Outside Humidity</Text>
-                <ScrollView horizontal>
-                    <BarChart
-                        data={{
-                            labels: data.map((_, index) => `Day ${index + 1}`),
-                            datasets: [
-                                {
-                                    data: data.map(dayData => {
-                                        return Math.floor(dayData.hourlyHumidityOutside.reduce((a, b) => a + b, 0) / dayData.hourlyHumidityOutside.length); // No decimal values
-                                    }),
-                                    color: () => `rgba(0, 0, 0, 1)` // Outside humidity bars black
-                                },
-                            ],
-                        }}
-                        width={Dimensions.get('window').width * 1.5} // Make the chart wider to enable scrolling
-                        height={300}
-                        fromZero={true} // Ensure the y-axis starts from zero
-                        yAxisSuffix="%"
-                        chartConfig={{
-                            backgroundColor: '#690000',
-                            backgroundGradientFrom: '#ab4444',
-                            backgroundGradientTo: '#f7facf',
-                            decimalPlaces: 0, // No decimals
-                            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`, // Outside bars color black
-                            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        }}
-                        style={{
-                            marginVertical: 8,
-                            borderRadius: 16,
-                            marginLeft: 16, 
-                            marginRight: 16, 
-                            padding: 5,
-                        }}
-                    />
-                </ScrollView>
-            </ScrollView>
-        </SafeAreaView>
-    );
+  const fetchHumidityData = async () => {
+  setLoading(true);
+  try {
+    const response = await axios.get(`${baseUrl}/inside-humidity`);
+    setHumidityData(response.data);
+    setCurrentPage(1);
+  } catch (err) {
+    Alert.alert("Error", "Failed to fetch humidity data");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
 };
+
+const fetchByRange = async () => {
+  setLoading(true);
+  try {
+    const response = await axios.get(`${baseUrl}/inside-humidity/range`, {
+      params: {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+      },
+    });
+    setHumidityData(response.data);
+    setCurrentPage(1);
+  } catch (err) {
+    Alert.alert("Error", "Failed to fetch range data");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleSearch = () => {
+    fetchByRange();
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      {loading ? (
+        <ActivityIndicator size="large" color="#000" />
+      ) : (
+        <>
+          <Text style={styles.header}>Humidity Report</Text>
+
+          <BarChart
+            data={{
+              labels: chartLabels,
+              datasets: [{ data: humidityValues }],
+              legend: ["Humidity"],
+            }}
+            width={Dimensions.get("window").width - 20}
+            height={250}
+            yAxisSuffix="%"
+            chartConfig={{
+              backgroundGradientFrom: "#fff",
+              backgroundGradientTo: "#fff",
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: () => "#333",
+              decimalPlaces: 1,
+            }}
+            verticalLabelRotation={45}
+            fromZero
+            style={styles.chart}
+          />
+
+          <View style={styles.datePickerContainer}>
+            <TouchableOpacity
+              onPress={() => setOpenStartPicker(true)}
+              style={styles.dateBox}
+            >
+              <Text>{startDate.toDateString()}</Text>
+            </TouchableOpacity>
+            <Text style={styles.dateRangeDivider}>To</Text>
+            <TouchableOpacity
+              onPress={() => setOpenEndPicker(true)}
+              style={styles.dateBox}
+            >
+              <Text>{endDate.toDateString()}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {openStartPicker && (
+            <DateTimePicker
+              value={startDate}
+              mode="date"
+              display="default"
+              onChange={(e, selectedDate) => {
+                setOpenStartPicker(false);
+                if (selectedDate) setStartDate(selectedDate);
+              }}
+            />
+          )}
+
+          {openEndPicker && (
+            <DateTimePicker
+              value={endDate}
+              mode="date"
+              display="default"
+              onChange={(e, selectedDate) => {
+                setOpenEndPicker(false);
+                if (selectedDate) setEndDate(selectedDate);
+              }}
+            />
+          )}
+
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <Text style={styles.searchButtonText}>Search</Text>
+          </TouchableOpacity>
+
+          <View style={styles.tableContainer}>
+            <Text style={styles.tableTitle}>Humidity Logs</Text>
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Humidity</Text>
+              <Text style={styles.tableHeaderText}>Timestamp</Text>
+            </View>
+            {currentData.map((item, index) => (
+              <View key={index} style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item.humidity}%</Text>
+                <Text style={styles.tableCell}>
+                  {new Date(item.timestamp).toLocaleString()}
+                </Text>
+              </View>
+            ))}
+
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity
+                onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                style={[
+                  styles.arrowButton,
+                  currentPage === 1 && styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>{"<"}</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.pageInfoText}>
+                Page {currentPage} of {totalPages}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                style={[
+                  styles.arrowButton,
+                  currentPage === totalPages && styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>{">"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      )}
+    </ScrollView>
+  );
+};
+
+// styles object remains unchanged (same as your previous one)
+const styles = StyleSheet.create({
+  container: { padding: 10, backgroundColor: "#f5f5f5" },
+  header: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
+  chart: { marginVertical: 10, borderRadius: 16 },
+  datePickerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  dateBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#fff",
+    width: "45%",
+    alignItems: "center",
+  },
+  dateRangeDivider: { alignSelf: "center", marginHorizontal: 10 },
+  searchButton: {
+    backgroundColor: "#000",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  searchButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  tableContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginTop: 40,
+  },
+  tableTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  tableHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    paddingBottom: 5,
+  },
+  tableHeaderText: { fontWeight: "bold", fontSize: 14 },
+  tableRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  tableCell: { fontSize: 13 },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+    gap: 10,
+  },
+  arrowButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    backgroundColor: "#000",
+    borderRadius: 6,
+  },
+  disabledArrowButton: { backgroundColor: "#ccc" },
+  arrowText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  pageInfoText: { fontSize: 14, fontWeight: "bold", color: "#333" },
+});
 
 export default HumidityUsage;
