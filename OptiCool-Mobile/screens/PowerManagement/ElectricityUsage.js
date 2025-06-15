@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
   StyleSheet,
   FlatList,
 } from "react-native";
@@ -15,7 +14,6 @@ const ElectricityUsage = () => {
   const [activeTab, setActiveTab] = useState("weekly");
   const [weeklyData, setWeeklyData] = useState({ labels: [], values: [] });
   const [monthlyData, setMonthlyData] = useState({ labels: [], values: [] });
-  const [selectedItem, setSelectedItem] = useState(null);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -32,12 +30,12 @@ const ElectricityUsage = () => {
 
       setWeeklyData({
         labels: timeLabels,
-        values: [], // Add actual data if available
+        values: [],
       });
 
       setMonthlyData({
         labels: timeLabels,
-        values: [], // Add actual data if available
+        values: [],
       });
     } catch (error) {
       console.error("Error fetching usage data:", error);
@@ -89,19 +87,15 @@ const ElectricityUsage = () => {
       icon: "cloud",
       title: "Humidity Report",
       navigateTo: "HumidityUsage",
-      from: null, // Top-level
+      from: null,
     },
     {
       icon: "thermometer-half",
       title: "Temperature Report",
       navigateTo: "TemperatureUsage",
-      from: null, // Top-level
+      from: null,
     },
   ];
-
-  const handleCardPress = (item) => {
-    setSelectedItem(item);
-  };
 
   const handleNavigate = (item) => {
     if (item.from) {
@@ -116,6 +110,7 @@ const ElectricityUsage = () => {
       data={menuItems}
       keyExtractor={(item, index) => index.toString()}
       showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
       ListHeaderComponent={
         <>
           <View style={styles.tabBox}>
@@ -170,53 +165,33 @@ const ElectricityUsage = () => {
         </>
       }
       renderItem={({ item }) => (
-        <TouchableOpacity onPress={() => handleCardPress(item)}>
-          <View style={styles.rectangle}>
-            <View style={styles.menuItem}>
-              <Icon
-                name={item.icon}
-                size={24}
-                color="black"
-                style={styles.icon}
-              />
-              <Text style={styles.menuText}>{item.title}</Text>
-              {item.navigateTo && (
-                <TouchableOpacity
-                  style={styles.detailButton}
-                  onPress={() => handleNavigate(item)}
-                >
-                  <Text style={styles.detailText}>Details</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+        <View style={styles.rectangle}>
+          <View style={styles.menuItem}>
+            <Icon
+              name={item.icon}
+              size={24}
+              color="black"
+              style={styles.icon}
+            />
+            <Text style={styles.menuText}>{item.title}</Text>
+            {item.navigateTo && (
+              <TouchableOpacity
+                style={styles.detailButton}
+                onPress={() => handleNavigate(item)}
+              >
+                <Text style={styles.detailText}>Details</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        </TouchableOpacity>
+        </View>
       )}
-      ListFooterComponent={
-        selectedItem && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{selectedItem.title}</Text>
-            <Text style={styles.cardContent}>
-              Additional details about {selectedItem.title}...
-            </Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setSelectedItem(null)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        )
-      }
     />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ebedf0",
-    padding: 16,
+  scrollContent: {
+    paddingBottom: 90,
   },
   tabBox: {
     flexDirection: "row",
@@ -285,37 +260,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   detailText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    padding: 20,
-    borderRadius: 10,
-    margin: 20,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  cardContent: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  closeButton: {
-    backgroundColor: "#dc3545",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignSelf: "center",
-  },
-  closeButtonText: {
     color: "white",
     fontWeight: "bold",
   },
