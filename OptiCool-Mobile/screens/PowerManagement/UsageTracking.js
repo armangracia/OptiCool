@@ -28,6 +28,15 @@ const UsageTracking = () => {
   const [loading, setLoading] = useState(false);
   const [powerData, setPowerData] = useState([]);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentData = powerData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(powerData.length / itemsPerPage);
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   useEffect(() => {
     console.log("Component mounted, fetching initial data...");
     fetchPowerData();
@@ -36,9 +45,12 @@ const UsageTracking = () => {
   const fetchPowerData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/power-consumption/getpowerconsumption`);
+      const response = await axios.get(
+        `${baseUrl}/power-consumption/getpowerconsumption`
+      );
       const data = response.data;
-      setPowerData(data); // Set power data for the table
+      setPowerData(data);
+      setCurrentPage(1);
     } catch (error) {
       Alert.alert("Error", "Failed to fetch power data");
       console.error("Error fetching power data:", error);
@@ -57,18 +69,22 @@ const UsageTracking = () => {
         },
       });
       const data = response.data;
-      setPowerData(data); // Set power data for the table
+      setPowerData(data);
+      setCurrentPage(1);
 
-      // Update chart data
-      const labels = data.map(item => new Date(item.timestamp).toLocaleDateString());
-      const consumptionData = data.map(item => item.consumption);
+      const labels = data.map((item) =>
+        new Date(item.timestamp).toLocaleDateString()
+      );
+      const consumptionData = data.map((item) => item.consumption);
       setChartData({
         labels,
         datasets: [{ data: consumptionData }],
       });
 
-      // Update summary data
-      const totalConsumption = consumptionData.reduce((acc, value) => acc + value, 0);
+      const totalConsumption = consumptionData.reduce(
+        (acc, value) => acc + value,
+        0
+      );
       setTodayUsage(consumptionData[consumptionData.length - 1] || 0);
       setMonthlyUsage(totalConsumption);
     } catch (error) {
@@ -87,20 +103,26 @@ const UsageTracking = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#000000" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#000000" />
+        </View>
       ) : (
         <>
           <View style={styles.summaryContainer}>
             <View style={styles.summaryItem}>
               <Text style={styles.icon}>🔌</Text>
               <Text style={styles.label}>Today</Text>
-              <Text style={styles.value}>{todayUsage ? `${todayUsage} kWh` : "N/A"}</Text>
+              <Text style={styles.value}>
+                {todayUsage ? `${todayUsage} kWh` : "N/A"}
+              </Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryItem}>
               <Text style={styles.icon}>⚡</Text>
               <Text style={styles.label}>This Month</Text>
-              <Text style={styles.value}>{monthlyUsage ? `${monthlyUsage.toFixed(2)} kWh` : "N/A"}</Text>
+              <Text style={styles.value}>
+                {monthlyUsage ? `${monthlyUsage.toFixed(2)} kWh` : "N/A"}
+              </Text>
             </View>
           </View>
 
@@ -179,12 +201,46 @@ const UsageTracking = () => {
               <Text style={styles.tableHeaderText}>Consumption (kWh)</Text>
               <Text style={styles.tableHeaderText}>Timestamp</Text>
             </View>
-            {powerData.map((powerconsumption, index) => (
+            {currentData.map((powerconsumption, index) => (
               <View key={index} style={styles.tableRow}>
-                <Text style={styles.tableCell}>{powerconsumption.consumption}</Text>
-                <Text style={styles.tableCell}>{new Date(powerconsumption.timestamp).toLocaleString()}</Text>
+                <Text style={styles.tableCell}>
+                  {powerconsumption.consumption}
+                </Text>
+                <Text style={styles.tableCell}>
+                  {new Date(powerconsumption.timestamp).toLocaleString()}
+                </Text>
               </View>
             ))}
+
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity
+                onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={[
+                  styles.arrowButton,
+                  currentPage === 1 && styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>«</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.pageInfoText}>
+                Page {currentPage} of {totalPages}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                style={[
+                  styles.arrowButton,
+                  currentPage === totalPages && styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>»</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </>
       )}
@@ -196,6 +252,13 @@ const styles = StyleSheet.create({
   container: {
     padding: 10,
     backgroundColor: "#f5f5f5",
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    height: Dimensions.get("window").height,
   },
   dateBox: {
     borderWidth: 1,
@@ -240,26 +303,26 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   summaryContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-    width: '90%',
-    alignSelf: 'center',
-    marginTop: 10, 
+    borderColor: "#ddd",
+    width: "90%",
+    alignSelf: "center",
+    marginTop: 10,
   },
   summaryItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   divider: {
     width: 0.5,
-    backgroundColor: '#ccc',
-    height: '60%',
+    backgroundColor: "#ccc",
+    height: "60%",
     marginHorizontal: 5,
   },
   icon: {
@@ -268,16 +331,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: '#888',
+    color: "#888",
     marginBottom: 2,
   },
   value: {
     fontSize: 14,
-    fontWeight: 'bold',
-  },
-  loadingText: {
-    textAlign: "center",
-    color: "#000000",
+    fontWeight: "bold",
   },
   tableContainer: {
     marginTop: 20,
@@ -313,6 +372,32 @@ const styles = StyleSheet.create({
   tableCell: {
     fontSize: 14,
   },
+  paginationContainer: {
+  flexDirection: "row",
+  justifyContent: "center",
+  alignItems: "center",
+  marginTop: 10,
+  gap: 10,
+},
+arrowButton: {
+  paddingVertical: 6,
+  paddingHorizontal: 14,
+  backgroundColor: "#000",
+  borderRadius: 6,
+},
+disabledArrowButton: {
+  backgroundColor: "#ccc",
+},
+arrowText: {
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: "bold",
+},
+pageInfoText: {
+  fontSize: 14,
+  fontWeight: "bold",
+  color: "#333",
+},
 });
 
 export default UsageTracking;

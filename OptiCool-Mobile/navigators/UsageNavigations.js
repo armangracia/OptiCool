@@ -3,6 +3,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import ElectricityUsage from "../screens/PowerManagement/ElectricityUsage";
 import UsageTracking from "../screens/PowerManagement/UsageTracking";
+import HumidityUsage from "../screens/PowerManagement/HumidityUsage";
 
 const Stack = createStackNavigator();
 
@@ -16,7 +17,10 @@ const UsageNavigations = () => {
        options={{ headerShown: true }}
       /> */}
        
-      <Stack.Screen name="Usage Tracking" component={UsageTracking} 
+      <Stack.Screen name="Usage Tracker" component={UsageTracking} 
+       options={{ headerShown: true }}
+      />
+      <Stack.Screen name="Humidity Tracker" component={HumidityUsage} 
        options={{ headerShown: true }}
       />
     </Stack.Navigator>
