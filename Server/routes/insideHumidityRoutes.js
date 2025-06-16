@@ -6,7 +6,7 @@ const {
 } = require("../controllers/insideHumidityController");
 
 // Route: GET /inside-humidity/
-router.get("/", getAllInsideHumidity);
+router.get("/getinsideHumidity", getAllInsideHumidity);
 
 // Route: GET /inside-humidity/range
 router.get("/range", getInsideHumidityByRange);

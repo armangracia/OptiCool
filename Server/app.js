@@ -18,9 +18,8 @@ const postRoutes = require('./routes/postRoutes');
 const powerConsumptionRoutes = require('./routes/powerConsumptionRoutes'); // Import power consumption routes
 // const roomRoutes = require('./routes/roomRoutes');
 // const statusRoutes = require('./routes/statusRoutes');
-const insideHumidityRoutes = require("./routes/insideHumidity");
+const insideHumidityRoutes = require("./routes/insideHumidityRoutes");
 
-app.use("/inside-humidity", insideHumidityRoutes);
 
 // app.use('/', statusRoutes);
 app.use('/api/v1/users', userRoutes);
@@ -28,6 +27,7 @@ app.use('/api/v1/ereports', ereportRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/power-consumption', powerConsumptionRoutes);
 // app.use('/api/v1/room', roomRoutes);
+app.use("/api/v1/inside-humidity", insideHumidityRoutes);
 
 app.post('/api/v1/save/data', async (req, res) => {
     const jsonData = JSON.stringify(req.body.power, null, 2);

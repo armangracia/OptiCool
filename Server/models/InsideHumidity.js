@@ -5,4 +5,7 @@ const insideHumiditySchema = new mongoose.Schema({
   humidity: Number,
 });
 
-module.exports = mongoose.model("InsideHumidity", insideHumiditySchema);
+const InsideHumidity = mongoose.model("InsideHumidity", insideHumiditySchema);
+
+module.exports = InsideHumidity;
+

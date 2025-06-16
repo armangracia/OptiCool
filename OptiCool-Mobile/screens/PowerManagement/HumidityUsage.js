@@ -31,8 +31,16 @@ const HumidityUsage = () => {
 
   // DUMMY DATA for the chart
   const chartLabels = [
-    "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
-    "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"
+    "8 AM",
+    "9 AM",
+    "10 AM",
+    "11 AM",
+    "12 PM",
+    "1 PM",
+    "2 PM",
+    "3 PM",
+    "4 PM",
+    "5 PM",
   ];
   const humidityValues = [65, 67, 68, 70, 72, 71, 69, 66, 64, 62];
 
@@ -42,37 +50,39 @@ const HumidityUsage = () => {
   }, []);
 
   const fetchHumidityData = async () => {
-  setLoading(true);
-  try {
-    const response = await axios.get(`${baseUrl}/inside-humidity`);
-    setHumidityData(response.data);
-    setCurrentPage(1);
-  } catch (err) {
-    Alert.alert("Error", "Failed to fetch humidity data");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${baseUrl}/inside-humidity/getinsideHumidity`
+      );
+      setHumidityData(response.data);
+      setCurrentPage(1);
+    } catch (err) {
+      Alert.alert("Error", "Failed to fetch humidity data");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-const fetchByRange = async () => {
-  setLoading(true);
-  try {
-    const response = await axios.get(`${baseUrl}/inside-humidity/range`, {
-      params: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-      },
-    });
-    setHumidityData(response.data);
-    setCurrentPage(1);
-  } catch (err) {
-    Alert.alert("Error", "Failed to fetch range data");
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchByRange = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(`${baseUrl}/inside-humidity/range`, {
+        params: {
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+        },
+      });
+      setHumidityData(response.data);
+      setCurrentPage(1);
+    } catch (err) {
+      Alert.alert("Error", "Failed to fetch range data");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
     fetchByRange();
