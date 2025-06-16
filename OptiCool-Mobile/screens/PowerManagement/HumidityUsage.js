@@ -22,6 +22,8 @@ const HumidityUsage = () => {
   const [loading, setLoading] = useState(false);
 
   const [humidityData, setHumidityData] = useState([]);
+  const [outsideHumidityData, setOutsideHumidityData] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -29,7 +31,19 @@ const HumidityUsage = () => {
   const currentData = humidityData.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(humidityData.length / itemsPerPage);
 
-  // DUMMY DATA for the chart
+  const [outsidePage, setOutsidePage] = useState(1);
+  const outsideItemsPerPage = 20;
+  const outsideIndexOfLastItem = outsidePage * outsideItemsPerPage;
+  const outsideIndexOfFirstItem =
+    outsideIndexOfLastItem - outsideItemsPerPage;
+  const currentOutsideData = outsideHumidityData.slice(
+    outsideIndexOfFirstItem,
+    outsideIndexOfLastItem
+  );
+  const outsideTotalPages = Math.ceil(
+    outsideHumidityData.length / outsideItemsPerPage
+  );
+
   const chartLabels = [
     "8 AM",
     "9 AM",
@@ -42,11 +56,12 @@ const HumidityUsage = () => {
     "4 PM",
     "5 PM",
   ];
-  const humidityValues = [65, 67, 68, 70, 72, 71, 69, 66, 64, 62];
+  const dummyInsideHumidity = [65, 67, 68, 70, 72, 71, 69, 66, 64, 62];
+  const dummyOutsideHumidity = [60, 62, 63, 65, 64, 63, 61, 60, 59, 58];
 
   useEffect(() => {
-    console.log("Component mounted, fetching initial data...");
     fetchHumidityData();
+    fetchOutsideHumidityData();
   }, []);
 
   const fetchHumidityData = async () => {
@@ -58,26 +73,49 @@ const HumidityUsage = () => {
       setHumidityData(response.data);
       setCurrentPage(1);
     } catch (err) {
-      Alert.alert("Error", "Failed to fetch humidity data");
+      Alert.alert("Error", "Failed to fetch inside humidity data");
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchOutsideHumidityData = async () => {
+    try {
+      const response = await axios.get(
+        `${baseUrl}/outside-humidity/getoutsideHumidity`
+      );
+      setOutsideHumidityData(response.data);
+      setOutsidePage(1);
+    } catch (err) {
+      Alert.alert("Error", "Failed to fetch outside humidity data");
+      console.error(err);
+    }
+  };
+
   const fetchByRange = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/inside-humidity/range`, {
-        params: {
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
-        },
-      });
-      setHumidityData(response.data);
+      const [insideRes, outsideRes] = await Promise.all([
+        axios.get(`${baseUrl}/inside-humidity/range`, {
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
+        }),
+        axios.get(`${baseUrl}/outside-humidity/range`, {
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
+        }),
+      ]);
+      setHumidityData(insideRes.data);
+      setOutsideHumidityData(outsideRes.data);
       setCurrentPage(1);
+      setOutsidePage(1);
     } catch (err) {
-      Alert.alert("Error", "Failed to fetch range data");
+      Alert.alert("Error", "Failed to fetch data by range");
       console.error(err);
     } finally {
       setLoading(false);
@@ -96,27 +134,7 @@ const HumidityUsage = () => {
         <>
           <Text style={styles.header}>Humidity Report</Text>
 
-          <BarChart
-            data={{
-              labels: chartLabels,
-              datasets: [{ data: humidityValues }],
-              legend: ["Humidity"],
-            }}
-            width={Dimensions.get("window").width - 20}
-            height={250}
-            yAxisSuffix="%"
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: () => "#333",
-              decimalPlaces: 1,
-            }}
-            verticalLabelRotation={45}
-            fromZero
-            style={styles.chart}
-          />
-
+          {/* Date Pickers + Search */}
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               onPress={() => setOpenStartPicker(true)}
@@ -144,7 +162,6 @@ const HumidityUsage = () => {
               }}
             />
           )}
-
           {openEndPicker && (
             <DateTimePicker
               value={endDate}
@@ -161,8 +178,31 @@ const HumidityUsage = () => {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
+          {/* Inside Humidity Section */}
+          <Text style={styles.subHeader}>Inside Humidity</Text>
+          <BarChart
+            data={{
+              labels: chartLabels,
+              datasets: [{ data: dummyInsideHumidity }],
+              legend: ["Humidity"],
+            }}
+            width={Dimensions.get("window").width - 20}
+            height={250}
+            yAxisSuffix="%"
+            chartConfig={{
+              backgroundGradientFrom: "#fff",
+              backgroundGradientTo: "#fff",
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: () => "#333",
+              decimalPlaces: 1,
+            }}
+            verticalLabelRotation={45}
+            fromZero
+            style={styles.chart}
+          />
+
           <View style={styles.tableContainer}>
-            <Text style={styles.tableTitle}>Humidity Logs</Text>
+            <Text style={styles.tableTitle}>Inside Humidity Logs</Text>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Humidity</Text>
               <Text style={styles.tableHeaderText}>Timestamp</Text>
@@ -175,7 +215,6 @@ const HumidityUsage = () => {
                 </Text>
               </View>
             ))}
-
             <View style={styles.paginationContainer}>
               <TouchableOpacity
                 onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -187,11 +226,9 @@ const HumidityUsage = () => {
               >
                 <Text style={styles.arrowText}>{"<"}</Text>
               </TouchableOpacity>
-
               <Text style={styles.pageInfoText}>
                 Page {currentPage} of {totalPages}
               </Text>
-
               <TouchableOpacity
                 onPress={() =>
                   setCurrentPage((p) => Math.min(p + 1, totalPages))
@@ -206,16 +243,89 @@ const HumidityUsage = () => {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Outside Humidity Section */}
+          <Text style={styles.subHeader}>Outside Humidity</Text>
+          <BarChart
+            data={{
+              labels: chartLabels,
+              datasets: [{ data: dummyOutsideHumidity }],
+              legend: ["Humidity"],
+            }}
+            width={Dimensions.get("window").width - 20}
+            height={250}
+            yAxisSuffix="%"
+            chartConfig={{
+              backgroundGradientFrom: "#fff",
+              backgroundGradientTo: "#fff",
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: () => "#333",
+              decimalPlaces: 1,
+            }}
+            verticalLabelRotation={45}
+            fromZero
+            style={styles.chart}
+          />
+
+          <View style={styles.tableContainer}>
+            <Text style={styles.tableTitle}>Outside Humidity Logs</Text>
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderText}>Humidity</Text>
+              <Text style={styles.tableHeaderText}>Timestamp</Text>
+            </View>
+            {currentOutsideData.map((item, index) => (
+              <View key={index} style={styles.tableRow}>
+                <Text style={styles.tableCell}>{item.humidity}%</Text>
+                <Text style={styles.tableCell}>
+                  {new Date(item.timestamp).toLocaleString()}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.paginationContainer}>
+              <TouchableOpacity
+                onPress={() => setOutsidePage((p) => Math.max(p - 1, 1))}
+                disabled={outsidePage === 1}
+                style={[
+                  styles.arrowButton,
+                  outsidePage === 1 && styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>{"<"}</Text>
+              </TouchableOpacity>
+              <Text style={styles.pageInfoText}>
+                Page {outsidePage} of {outsideTotalPages}
+              </Text>
+              <TouchableOpacity
+                onPress={() =>
+                  setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))
+                }
+                disabled={outsidePage === outsideTotalPages}
+                style={[
+                  styles.arrowButton,
+                  outsidePage === outsideTotalPages &&
+                    styles.disabledArrowButton,
+                ]}
+              >
+                <Text style={styles.arrowText}>{">"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </>
       )}
     </ScrollView>
   );
 };
 
-// styles object remains unchanged (same as your previous one)
 const styles = StyleSheet.create({
   container: { padding: 10, backgroundColor: "#f5f5f5" },
-  header: { fontSize: 20, fontWeight: "bold", marginVertical: 10 },
+  header: { fontSize: 22, fontWeight: "bold", marginVertical: 10 },
+  subHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 30,
+    marginBottom: 10,
+    color: "#000",
+  },
   chart: { marginVertical: 10, borderRadius: 16 },
   datePickerContainer: {
     flexDirection: "row",
@@ -246,7 +356,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderWidth: 1,
     borderColor: "#ddd",
-    marginTop: 40,
+    marginTop: 10,
   },
   tableTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   tableHeader: {
