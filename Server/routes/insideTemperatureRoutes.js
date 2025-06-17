@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   getAllInsideTemperature,
   getInsideTemperatureByRange,
-} = require("../controllers/insideTempeControllerr");
+} = require("../controllers/insideTemperatureController");
 
 router.get("/getinsideTemperature", getAllInsideTemperature);
 

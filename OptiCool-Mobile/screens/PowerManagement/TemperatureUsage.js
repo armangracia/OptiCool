@@ -54,7 +54,7 @@ const TemperatureUsage = () => {
   const fetchTemperatureData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/inside-temperature/getinsideTemp`);
+      const response = await axios.get(`${baseUrl}/inside-temperature/getinsideTemperature`);
       setInsideData(response.data);
       setCurrentPage(1);
     } catch (err) {
@@ -67,7 +67,7 @@ const TemperatureUsage = () => {
 
   const fetchOutsideTemperatureData = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/outside-temperature/getoutsideTemp`);
+      const response = await axios.get(`${baseUrl}/outside-temperature/getoutsideTemperature`);
       setOutsideData(response.data);
       setOutsidePage(1);
     } catch (err) {

@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   getAllOutsideTemperature,
   getOutsideTemperatureByRange,
-} = require("../controllers/outsideTempControllerr");
+} = require("../controllers/outsideTempController");
 
 router.get("/getoutsideTemperature", getAllOutsideTemperature);
 
