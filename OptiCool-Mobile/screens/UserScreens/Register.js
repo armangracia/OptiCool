@@ -19,13 +19,11 @@ export default function Register({ navigation }) {
 
   const handleAvatarSelection = async () => {
     if (avatar) {
-      // If an image is already selected, remove it
       setAvatar(null);
       return;
     }
 
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       alert("Permission to access gallery is required!");
       return;
@@ -56,7 +54,6 @@ export default function Register({ navigation }) {
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password"), null], "Passwords must match")
       .required("Please confirm your password"),
-    // avatar: Yup.object().required('Avatar is required'),
   });
 
   const register = async (formData) => {
@@ -68,7 +65,6 @@ export default function Register({ navigation }) {
       });
 
       Alert.alert("Account created!", "Login your account");
-
       navigation.navigate("Login");
     } catch (err) {
       console.log(JSON.stringify(err));
@@ -77,7 +73,6 @@ export default function Register({ navigation }) {
 
   const submit = async (userData, setSubmitting) => {
     const formData = new FormData();
-
     const newImageUri = "file:///" + avatar?.split("file:/").join("");
 
     userData.avatar = {
@@ -91,12 +86,13 @@ export default function Register({ navigation }) {
     });
 
     await register(formData);
-
     setSubmitting(false);
   };
 
   return (
     <View style={styles.container}>
+      {/* <Text style={styles.heading}>Create your account</Text> */}
+
       <Formik
         initialValues={{
           username: "",
@@ -106,9 +102,7 @@ export default function Register({ navigation }) {
           avatar: "",
         }}
         validationSchema={validationSchema}
-        onSubmit={(values, { setSubmitting }) => {
-          submit(values, setSubmitting);
-        }}
+        onSubmit={(values, { setSubmitting }) => submit(values, setSubmitting)}
       >
         {({
           handleChange,
@@ -123,94 +117,81 @@ export default function Register({ navigation }) {
           isSubmitting,
         }) => (
           <>
-            {/* Display the avatar preview if an image is selected */}
-            {avatar !== null ? (
-              <Avatar.Image
-                source={{ uri: avatar }}
-                size={125}
-                style={styles.avatarPreview}
-              />
-            ) : (
-              <Avatar.Icon
-                icon={"account"}
-                size={125}
-                style={styles.avatarPreview}
-              />
-            )}
-
-            <Button
-              icon={avatar ? "delete" : "camera"}
-              mode="outlined"
-              onPress={() => {
-                handleAvatarSelection();
-                setFieldError("avatar", null);
-              }}
-              labelStyle={{ color: "#000000" }} // Set text color to black
-            >
-              {avatar ? "Remove Avatar" : "Select Avatar"}
-            </Button>
-
-            <HelperText type="error" visible={touched.avatar && errors.avatar}>
-              {errors.avatar}
-            </HelperText>
+            <View style={styles.avatarContainer}>
+              {avatar ? (
+                <Image
+                  source={{ uri: avatar }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <Avatar.Icon icon="account" size={100} style={styles.avatarPlaceholder} />
+              )}
+              <Button
+                icon={avatar ? "delete" : "camera"}
+                mode="outlined"
+                onPress={() => {
+                  handleAvatarSelection();
+                  setFieldError("avatar", null);
+                }}
+                style={styles.avatarButton}
+                labelStyle={{ color: "#000" }}
+              >
+                {avatar ? "Remove Avatar" : "Select Avatar"}
+              </Button>
+            </View>
 
             <TextInput
-              label="Username"
+              placeholder="Username"
               mode="outlined"
               onChangeText={handleChange("username")}
               onBlur={handleBlur("username")}
               value={values.username}
               error={touched.username && !!errors.username}
+              style={styles.input}
             />
-            <HelperText
-              type="error"
-              visible={touched.username && errors.username}
-            >
+            <HelperText type="error" visible={touched.username && errors.username}>
               {errors.username}
             </HelperText>
 
             <TextInput
-              label="Email"
+              placeholder="Email"
               mode="outlined"
               keyboardType="email-address"
               onChangeText={handleChange("email")}
               onBlur={handleBlur("email")}
               value={values.email}
               error={touched.email && !!errors.email}
+              style={styles.input}
             />
             <HelperText type="error" visible={touched.email && errors.email}>
               {errors.email}
             </HelperText>
 
             <TextInput
-              label="Password"
+              placeholder="Password"
               mode="outlined"
               secureTextEntry
               onChangeText={handleChange("password")}
               onBlur={handleBlur("password")}
               value={values.password}
               error={touched.password && !!errors.password}
+              style={styles.input}
             />
-            <HelperText
-              type="error"
-              visible={touched.password && errors.password}
-            >
+            <HelperText type="error" visible={touched.password && errors.password}>
               {errors.password}
             </HelperText>
 
             <TextInput
-              label="Confirm Password"
+              placeholder="Confirm Password"
               mode="outlined"
               secureTextEntry
               onChangeText={handleChange("confirmPassword")}
               onBlur={handleBlur("confirmPassword")}
               value={values.confirmPassword}
               error={touched.confirmPassword && !!errors.confirmPassword}
+              style={styles.input}
             />
-            <HelperText
-              type="error"
-              visible={touched.confirmPassword && errors.confirmPassword}
-            >
+            <HelperText type="error" visible={touched.confirmPassword && errors.confirmPassword}>
               {errors.confirmPassword}
             </HelperText>
 
@@ -224,22 +205,15 @@ export default function Register({ navigation }) {
                 handleSubmit();
               }}
               style={styles.submitButton}
+              labelStyle={styles.submitButtonText}
             >
               Register
             </Button>
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 5,
-                paddingHorizontal: 5,
-                marginTop: 10,
-              }}
-            >
-              <Text style={{ alignSelf: "center" }}>
-                Already have an account?
-              </Text>
+
+            <View style={styles.loginRedirect}>
+              <Text style={styles.loginText}>Already have an account?</Text>
               <Text
-                variant="labelLarge"
+                style={styles.loginLink}
                 onPress={() => navigation.navigate("Login")}
               >
                 Login
@@ -255,28 +229,62 @@ export default function Register({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 24,
+    backgroundColor: "#fff",
     justifyContent: "center",
-    backgroundColor: "#e2e2e7",
   },
-  avatarPreview: {
+  heading: {
+    fontSize: 24,
+    fontWeight: "700",
     marginBottom: 20,
     alignSelf: "center",
-    backgroundColor: "#000000",
+    color: "#000",
+  },
+  avatarContainer: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 16,
+    marginBottom: 10,
+  },
+  avatarPlaceholder: {
+    backgroundColor: "#ccc",
+    marginBottom: 10,
+  },
+  avatarButton: {
+    borderColor: "#000",
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  input: {
+    marginBottom: 10,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
   },
   submitButton: {
-    marginTop: 5,
-    backgroundColor: "#000000", // Black background
-    borderRadius: 9, // Remove rounding for squarish look
-    paddingVertical: 8, // Adjust padding for better size
+    backgroundColor: "#000",
+    marginTop: 10,
+    borderRadius: 10,
+    paddingVertical: 8,
   },
   submitButtonText: {
-    color: "#FFFFFF", // White font color
-    fontWeight: "bold", // Bold for emphasis
-    textTransform: "uppercase", // Optional for all caps
+    color: "#fff",
+    fontWeight: "bold",
   },
-  errorText: {
-    color: "red",
-    fontSize: 12,
+  loginRedirect: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 16,
+  },
+  loginText: {
+    color: "#444",
+  },
+  loginLink: {
+    color: "#00bfff",
+    marginLeft: 5,
+    fontWeight: "600",
   },
 });

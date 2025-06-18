@@ -117,7 +117,7 @@ export default function Login({ navigation }) {
               Login
             </Button>
 
-            <Text style={styles.orLoginText}>Or Login with</Text>
+            {/* <Text style={styles.orLoginText}>Or Login with</Text> */}
 
             
 
@@ -192,6 +192,7 @@ const styles = StyleSheet.create({
   registerRow: {
     flexDirection: "row",
     justifyContent: "center",
+    marginTop: 20,
   },
   registerText: {
     color: "#00bfff",
