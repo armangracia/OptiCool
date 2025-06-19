@@ -114,15 +114,22 @@ const Menu = () => {
         user: user._id ? user._id : "Missing ID",
       };
 
-      const response = await axios.post(`${baseURL}/ereports/ereport`, reportPayload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.post(
+        `${baseURL}/ereports/ereport`,
+        reportPayload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.success) {
         Alert.alert("Success", "Report submitted successfully.");
         setShowReportModal(false);
       } else {
-        Alert.alert("Error", "Failed to submit report: " + response.data.message);
+        Alert.alert(
+          "Error",
+          "Failed to submit report: " + response.data.message
+        );
       }
     } catch (err) {
       console.error("Error:", err);
@@ -136,10 +143,14 @@ const Menu = () => {
     try {
       const data = await dmt3API.getComponentsStatusAPI();
       setIsConnected(true);
-      if (Boolean(data.ac1) !== applianceStatus.AC.AC) toggleAppliance("AC", "AC");
-      if (Boolean(data.blower) !== applianceStatus.Blower["Blower 1"]) toggleAppliance("Blower", "Blower 1");
-      if (Boolean(data.efan) !== applianceStatus.Fan["Fan 1"]) toggleAppliance("Fan", "Fan 1");
-      if (Boolean(data.exhaust) !== applianceStatus.Exhaust["Exhaust 1"]) toggleAppliance("Exhaust", "Exhaust 1");
+      if (Boolean(data.ac1) !== applianceStatus.AC.AC)
+        toggleAppliance("AC", "AC");
+      if (Boolean(data.blower) !== applianceStatus.Blower["Blower 1"])
+        toggleAppliance("Blower", "Blower 1");
+      if (Boolean(data.efan) !== applianceStatus.Fan["Fan 1"])
+        toggleAppliance("Fan", "Fan 1");
+      if (Boolean(data.exhaust) !== applianceStatus.Exhaust["Exhaust 1"])
+        toggleAppliance("Exhaust", "Exhaust 1");
     } catch {
       setIsConnected(false);
     }
@@ -152,13 +163,18 @@ const Menu = () => {
   );
 
   return (
-    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollViewContent}
+    >
       <View style={styles.container}>
         {/* REPORT MODAL */}
         <Modal visible={showReportModal} transparent animationType="slide">
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Report Issue for {reportedAppliance}</Text>
+              <Text style={styles.modalTitle}>
+                Report Issue for {reportedAppliance}
+              </Text>
               {statuses.map((status) => (
                 <TouchableOpacity
                   key={status}
@@ -166,7 +182,11 @@ const Menu = () => {
                   onPress={() => setSelectedStatus(status)}
                 >
                   <MaterialCommunityIcons
-                    name={selectedStatus === status ? "radiobox-marked" : "radiobox-blank"}
+                    name={
+                      selectedStatus === status
+                        ? "radiobox-marked"
+                        : "radiobox-blank"
+                    }
                     size={20}
                     color="#2F80ED"
                   />
@@ -193,6 +213,7 @@ const Menu = () => {
         </Modal>
 
         <Animated.View style={styles.appliancesContainer}>
+          <View style={styles.divider} />
           <View style={styles.menuContainer}>
             {menuItems.map((item) => (
               <TouchableOpacity
@@ -208,7 +229,12 @@ const Menu = () => {
                   size={24}
                   color={selected === item.name ? "#ffffff" : "#9eaab8"}
                 />
-                <Text style={[styles.menuText, selected === item.name && styles.selectedText]}>
+                <Text
+                  style={[
+                    styles.menuText,
+                    selected === item.name && styles.selectedText,
+                  ]}
+                >
                   {item.name}
                 </Text>
               </TouchableOpacity>
@@ -217,12 +243,24 @@ const Menu = () => {
 
           {appliances[selected].map((appliance, index) => (
             <View key={index} style={styles.applianceRow}>
-              <MaterialCommunityIcons name="fan" size={30} color="#6C9AB2" style={styles.contentIconStyle} />
+              <MaterialCommunityIcons
+                name="fan"
+                size={30}
+                color="#6C9AB2"
+                style={styles.contentIconStyle}
+              />
               <View style={styles.textContainer}>
                 <Text style={styles.contentCardText}>{appliance.name}</Text>
-                <Text style={[styles.contentCardStatus, {
-                  color: applianceStatus[selected][appliance.name] ? "green" : "red"
-                }]}>
+                <Text
+                  style={[
+                    styles.contentCardStatus,
+                    {
+                      color: applianceStatus[selected][appliance.name]
+                        ? "green"
+                        : "red",
+                    },
+                  ]}
+                >
                   {applianceStatus[selected][appliance.name] ? "On" : "Off"}
                 </Text>
               </View>
@@ -239,7 +277,11 @@ const Menu = () => {
                   onPress={() => toggleAppliance(selected, appliance.name)}
                 >
                   <MaterialCommunityIcons
-                    name={applianceStatus[selected][appliance.name] ? "power" : "power-off"}
+                    name={
+                      applianceStatus[selected][appliance.name]
+                        ? "power"
+                        : "power-off"
+                    }
                     size={25}
                     color="#fff"
                   />
@@ -248,7 +290,11 @@ const Menu = () => {
                   style={styles.reportButton}
                   onPress={() => openReportModal(appliance.name)}
                 >
-                  <MaterialCommunityIcons name="alert-circle" size={24} color="#fff" />
+                  <MaterialCommunityIcons
+                    name="alert-circle"
+                    size={24}
+                    color="#fff"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -260,58 +306,114 @@ const Menu = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center" },
+  container: {
+    flex: 1,
+    alignItems: "center",
+  },
   scrollView: { flex: 1 },
   scrollViewContent: { flexGrow: 1 },
   menuContainer: {
-    flexDirection: "row", justifyContent: "space-around", alignItems: "center",
-    padding: 10, backgroundColor: "#fff", borderRadius: 10, width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    width: "100%",
+    marginTop: 20,
   },
   menuItem: {
-    alignItems: "center", padding: 10, backgroundColor: "#ebedf0",
-    borderRadius: 10, width: 70,
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#ebedf0",
+    borderRadius: 10,
+    width: 70,
   },
   selectedItem: { backgroundColor: "#2F80ED" },
   menuText: { marginTop: 5, fontSize: 12, color: "#9eaab8" },
   selectedText: { color: "#ffffff" },
   appliancesContainer: {
-    backgroundColor: "#fff", borderTopLeftRadius: 50, borderTopRightRadius: 50,
-    paddingHorizontal: 20, paddingTop: 10, width: "100%",
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    width: "100%",
+    paddingBottom: 120,
   },
   applianceRow: {
-    flexDirection: "row", alignItems: "center", padding: 10, width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    width: "100%",
   },
+  divider: {
+  height: 4,
+  width: 80,
+  backgroundColor: "#ccc",
+  borderRadius: 10,
+  alignSelf: "center",
+  marginVertical: 5,
+  marginBottom: -10,
+},
   contentCardText: { fontSize: 14, fontWeight: "bold", color: "black" },
   contentCardStatus: { fontSize: 14, fontWeight: "bold" },
   contentIconStyle: { marginRight: 20 },
   cardbuttonContainer: {
-    flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginLeft: "auto",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    marginLeft: "auto",
   },
   powerButton: {
-    borderRadius: 6, padding: 7, justifyContent: "center", alignItems: "center", marginLeft: 6,
+    borderRadius: 6,
+    padding: 7,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 6,
   },
   reportButton: {
-    backgroundColor: "red", borderRadius: 6, padding: 7, justifyContent: "center", alignItems: "center", marginLeft: 6,
+    backgroundColor: "red",
+    borderRadius: 6,
+    padding: 7,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 6,
   },
   // Modal
   modalContainer: {
-    flex: 1, justifyContent: "center", alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#fff", padding: 20, borderRadius: 10,
-    width: "85%", alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    width: "85%",
+    alignItems: "center",
   },
   modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   radioOption: {
-    flexDirection: "row", alignItems: "center", marginVertical: 5, width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 5,
+    width: "100%",
   },
   statusLabel: { marginLeft: 10, fontSize: 14 },
   modalButtons: {
-    flexDirection: "row", marginTop: 20, justifyContent: "space-between", width: "100%",
+    flexDirection: "row",
+    marginTop: 20,
+    justifyContent: "space-between",
+    width: "100%",
   },
   modalButton: {
-    flex: 1, padding: 10, borderRadius: 5, alignItems: "center", marginHorizontal: 5,
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    marginHorizontal: 5,
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
 });
