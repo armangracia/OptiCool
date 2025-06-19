@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, FlatList } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import ReportDetails from './ReportDetails';
-import ActivityLog from './ActivityLog';
-import axios from 'axios';
-import baseURL from '../../assets/common/baseUrl';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import baseURL from "../../assets/common/baseUrl";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 
 const AdminDashboard = () => {
   const navigation = useNavigation();
-  const [viewMode, setViewMode] = useState('icons');
-  const [isModalVisible, setModalVisible] = useState(false);
   const [reports, setReports] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [selectedPostId, setSelectedPostId] = useState(null);
 
   useEffect(() => {
     fetchReports();
@@ -41,235 +43,108 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleViewChange = (mode) => {
-    setViewMode(mode);
-  };
-
-  const handleFaqsPress = () => {
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-  };
-
-  const handleEditPostPress = () => {
-    setModalVisible(false);
-    navigation.navigate('PostList'); // Navigate to PostList screen
-  };
-
-  const menuItems = [
-    { id: 1, name: 'Activity Logs', icon: '📊', color: '#000000', onPress: () => navigation.navigate('ActivityLog') },
-    { id: 2, name: 'Reports', icon: '📑', color: '#000000', onPress: () => navigation.navigate('ReportDetails', { reports }) },
-    { id: 3, name: 'FAQs', icon: '⚙️', color: '#000000', onPress: handleFaqsPress },
-    { id: 4, name: 'Users', icon: '👤', color: '#000000', onPress: () => navigation.navigate('UsersAll') },
-    { id: 5, name: 'Active Users', icon: '🚪', color: '#000000', onPress: () => navigation.navigate('ActiveUsers') },
-    { id: 6, name: 'Edit Post', icon: '✏️', color: '#000000', onPress: handleEditPostPress },
+  const settingsSections = [
+    {
+      title: "Admin tools",
+      data: [
+          {
+          icon: <Ionicons name="bar-chart-outline" size={24} color="#555" />, name: 'Activity Logs',
+          sub: 'Review recent actions and usage history',
+          action: () => navigation.navigate('ActivityLog')
+        },
+        {
+          icon: <Ionicons name="document-text-outline" size={24} color="#555" />, name: 'Reports',
+          sub: 'View submitted reports and their details',
+          action: () => navigation.navigate('ReportDetails', { reports })
+        },
+        {
+          icon: <Ionicons name="help-circle-outline" size={24} color="#555" />, name: 'FAQs',
+          sub: 'Access and manage frequently asked questions',
+          action: () => navigation.navigate('HelpCenter')
+        },
+        {
+          icon: <Ionicons name="people-outline" size={24} color="#555" />, name: 'Users',
+          sub: 'View and manage all registered users',
+          action: () => navigation.navigate('UsersAll')
+        },
+        {
+          icon: <Ionicons name="person-circle-outline" size={24} color="#555" />, name: 'Active Users',
+          sub: 'Monitor users currently active in the system',
+          action: () => navigation.navigate('ActiveUsers')
+        },
+        {
+          icon: <Ionicons name="create-outline" size={24} color="#555" />, name: 'Edit Post',
+          sub: 'Modify or update existing help center posts',
+          action: () => navigation.navigate('PostList')
+        }
+      ],
+    },
   ];
 
   return (
-    <View style={styles.dashboard}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.dashboardText}>Dashboard</Text>
-        <View style={styles.buttonContainer}>
-          {/* <TouchableOpacity onPress={() => handleViewChange('icons')} style={styles.button}>
-            <Text style={styles.buttonText}>Icons</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleViewChange('list')} style={styles.button}>
-            <Text style={styles.buttonText}>List</Text>
-          </TouchableOpacity> */}
-        </View>
-      </View>
-
-      {/* Menu */}
-      <View style={styles.menu}>
-        {menuItems.map((item) => (
-          <TouchableOpacity 
-            key={item.id} 
-            style={[styles.menuBox, { backgroundColor: item.color }]} 
-            onPress={item.onPress}
-          >
-            <Text style={styles.icon}>{item.icon}</Text>
-            <Text style={styles.menuText}>{item.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={closeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>FAQs</Text>
-            <View style={styles.choiceContainer}>
-              <TouchableOpacity 
-                style={styles.choiceBox} 
-                onPress={() => {
-                  setModalVisible(false);
-                  navigation.navigate('HelpCenter');
-                }}
-              >
-                <Text style={styles.choiceText}>View Posts</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.choiceBox} 
-                onPress={() => {
-                  setModalVisible(false);
-                  navigation.navigate('CreatePosts');
-                }}
-              >
-                <Text style={styles.choiceText}>Create Post</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.choiceBox} 
-                onPress={handleEditPostPress}
-              >
-                <Text style={styles.choiceText}>Edit Post</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Cancel</Text>
+    <ScrollView style={styles.container}>
+      {settingsSections.map((section, index) => (
+        <View key={index} style={styles.section}>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          {section.data.map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              onPress={item.action}
+              style={styles.itemRow}
+            >
+              <View style={styles.textContainer}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  {item.icon}
+                  <Text style={[styles.itemTitle, { marginLeft: 10 }]}>
+                    {item.name}
+                  </Text>
+                </View>
+                {item.sub && <Text style={styles.itemSub}>{item.sub}</Text>}
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color="#999" />
             </TouchableOpacity>
-          </View>
+          ))}
         </View>
-      </Modal>
-    </View>
+      ))}
+    </ScrollView>
   );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  dashboard: {
+  container: {
     flex: 1,
-    padding: 20,
-    marginTop: 26,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#fff",
+    paddingTop: 50,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  button: {
-    marginLeft: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  menu: {
-    flexDirection: 'column', // Change to column for vertical layout
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',   // Stretch to full width
-  },
-  menuBox: {
-    width: '100%',           // Full width
-    height: 80,              // Shorter height for vertical list
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,        // Less margin for vertical spacing
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    flexDirection: 'row',    // Icon and text side by side
+  section: {
+    marginBottom: 30,
     paddingHorizontal: 20,
   },
-  icon: {
-    fontSize: 32,
-    marginRight: 20,         // Space between icon and text
-    color: '#fff',
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6e6e6e",
+    marginBottom: 10,
   },
-  dashboardText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'left', // Align text to the left
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end', // Align buttons to the right
-  },
-  menuText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
-  choiceContainer: {
-    width: '100%',
-  },
-  choiceBox: {
-    backgroundColor: '#007bff',
-    borderRadius: 10,
-    marginVertical: 10,
-    padding: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  choiceText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  postItem: {
-    padding: 10,
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderColor: "#eee",
   },
-  selectedPostItem: {
-    backgroundColor: '#e0e0e0',
+  textContainer: {
+    flex: 1,
   },
-  postTitle: {
+  itemTitle: {
     fontSize: 16,
-    color: '#333',
+    color: "#111",
   },
-  closeButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#dc3545',
-    borderRadius: 5,
-    width: '100%',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  itemSub: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
   },
 });
 
