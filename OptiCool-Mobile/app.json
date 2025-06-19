@@ -7,7 +7,7 @@
       "expo-notifications"
     ],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/OptiCool_Logo.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/OptiCool_Logo.png",
