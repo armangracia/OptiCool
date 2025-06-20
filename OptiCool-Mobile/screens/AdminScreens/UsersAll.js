@@ -1,14 +1,15 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   ScrollView,
   Alert,
+  StyleSheet,
 } from "react-native";
 import {
   Text,
-  DataTable,
-  IconButton,
+  Card,
   Button,
+  IconButton,
   BottomNavigation,
 } from "react-native-paper";
 import axios from "axios";
@@ -16,70 +17,138 @@ import baseURL from "../../assets/common/baseUrl";
 import { useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
 
-const UsersRoute = ({ users, page, itemsPerPage, onItemsPerPageChange, numberOfItemsPerPageList, handleUpdateRole, handleDelete, setPage }) => (
-  <ScrollView style={{ margin: 20 }}>
-    <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Users</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <DataTable style={{ width: 600 }}>
-        <DataTable.Header>
-          <DataTable.Title>Name</DataTable.Title>
-          <DataTable.Title>Email</DataTable.Title>
-          <DataTable.Title>Role</DataTable.Title>
-          <DataTable.Title numeric>Actions</DataTable.Title>
-        </DataTable.Header>
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    backgroundColor: "#f9f9f9",
+    flex: 1,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+    color: "#2d3e50",
+  },
+  card: {
+    marginBottom: 12,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  cardContent: {
+    padding: 16,
+  },
+  label: {
+    fontWeight: "bold",
+    color: "#555",
+  },
+  value: {
+    marginBottom: 6,
+    color: "#222",
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+    gap: 6,
+  },
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+    paddingHorizontal: 10,
+  },
+});
 
-        {users
-          .slice(page * itemsPerPage, (page + 1) * itemsPerPage)
-          .map((user) => (
-            <DataTable.Row key={user._id}>
-              <DataTable.Cell>{user.username}</DataTable.Cell>
-              <DataTable.Cell>{user.email}</DataTable.Cell>
-              <DataTable.Cell>{user.role}</DataTable.Cell>
-              <DataTable.Cell numeric>
-                <IconButton icon="account-edit" onPress={() => handleUpdateRole(user._id)} />
-                <IconButton icon="delete" onPress={() => handleDelete(user._id)} />
-              </DataTable.Cell>
-            </DataTable.Row>
-          ))}
+const UsersRoute = ({
+  users,
+  page,
+  itemsPerPage,
+  onItemsPerPageChange,
+  numberOfItemsPerPageList,
+  handleUpdateRole,
+  handleDelete,
+  setPage,
+}) => {
+  const paginatedUsers = users.slice(page * itemsPerPage, (page + 1) * itemsPerPage);
+  const totalPages = Math.ceil(users.length / itemsPerPage);
 
-        <DataTable.Pagination
-          page={page}
-          numberOfPages={Math.ceil(users.length / itemsPerPage)}
-          onPageChange={(newPage) => setPage(newPage)}
-          label={`${page * itemsPerPage + 1}-${Math.min((page + 1) * itemsPerPage, users.length)} of ${users.length}`}
-          numberOfItemsPerPageList={numberOfItemsPerPageList}
-          numberOfItemsPerPage={itemsPerPage}
-          onItemsPerPageChange={onItemsPerPageChange}
-          showFastPaginationControls
-        />
-      </DataTable>
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Users</Text>
+      {paginatedUsers.map((user) => (
+        <Card key={user._id} style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text style={styles.label}>Name:</Text>
+            <Text style={styles.value}>{user.username}</Text>
+
+            <Text style={styles.label}>Email:</Text>
+            <Text style={styles.value}>{user.email}</Text>
+
+            <Text style={styles.label}>Role:</Text>
+            <Text style={styles.value}>{user.role}</Text>
+
+            <View style={styles.actions}>
+              <IconButton icon="account-edit" onPress={() => handleUpdateRole(user._id)} />
+              <IconButton icon="delete" iconColor="red" onPress={() => handleDelete(user._id)} />
+            </View>
+          </Card.Content>
+        </Card>
+      ))}
+
+      {/* Pagination Controls */}
+      <View style={styles.pagination}>
+        <Button
+          disabled={page === 0}
+          onPress={() => setPage(page - 1)}
+        >
+          Previous
+        </Button>
+        <Text>
+          Page {page + 1} of {totalPages}
+        </Text>
+        <Button
+          disabled={(page + 1) >= totalPages}
+          onPress={() => setPage(page + 1)}
+        >
+          Next
+        </Button>
+      </View>
     </ScrollView>
-  </ScrollView>
-);
+  );
+};
 
 const PendingUsersRoute = ({ pendingUsers, approveUser }) => (
-  <ScrollView style={{ margin: 20 }}>
-    <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Pending Users</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <DataTable style={{ width: 600 }}>
-        <DataTable.Header>
-          <DataTable.Title>Name</DataTable.Title>
-          <DataTable.Title>Email</DataTable.Title>
-          <DataTable.Title numeric>Actions</DataTable.Title>
-        </DataTable.Header>
+  <ScrollView style={styles.container}>
+    <Text style={styles.title}>Pending Users</Text>
+    {pendingUsers.map((user) => (
+      <Card key={user._id} style={styles.card}>
+        <Card.Content style={styles.cardContent}>
+          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.value}>{user.username}</Text>
 
-        {pendingUsers.map((user) => (
-          <DataTable.Row key={user._id}>
-            <DataTable.Cell>{user.username}</DataTable.Cell>
-            <DataTable.Cell>{user.email}</DataTable.Cell>
-            <DataTable.Cell numeric>
-              <Button onPress={() => approveUser(user._id, true)}>Approve</Button>
-              <Button onPress={() => approveUser(user._id, false)} textColor="red">Decline</Button>
-            </DataTable.Cell>
-          </DataTable.Row>
-        ))}
-      </DataTable>
-    </ScrollView>
+          <Text style={styles.label}>Email:</Text>
+          <Text style={styles.value}>{user.email}</Text>
+
+          <View style={styles.actions}>
+            <Button
+              mode="contained"
+              buttonColor="#4caf50"
+              textColor="white"
+              onPress={() => approveUser(user._id, true)}
+            >
+              Approve
+            </Button>
+            <Button
+              mode="outlined"
+              textColor="red"
+              onPress={() => approveUser(user._id, false)}
+            >
+              Decline
+            </Button>
+          </View>
+        </Card.Content>
+      </Card>
+    ))}
   </ScrollView>
 );
 
@@ -90,7 +159,7 @@ export default function UsersAll() {
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
 
-  const [index, setIndex] = useState(0); // Middle tab selected
+  const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "users", title: "Users", icon: "account-group" },
     { key: "pending", title: "Pending", icon: "account-clock" },
@@ -176,9 +245,7 @@ export default function UsersAll() {
   );
 
   const renderScene = BottomNavigation.SceneMap({
-    files: () => <View style={{ flex: 1 }} />,
-    work: () => <View style={{ flex: 1 }} />,
-    users: () =>
+    users: () => (
       <UsersRoute
         users={users}
         page={page}
@@ -188,13 +255,9 @@ export default function UsersAll() {
         handleUpdateRole={handleUpdateRole}
         handleDelete={handleDelete}
         setPage={setPage}
-      />,
-    pending: () =>
-      <PendingUsersRoute
-        pendingUsers={pendingUsers}
-        approveUser={approveUser}
-      />,
-    search: () => <View style={{ flex: 1 }} />,
+      />
+    ),
+    pending: () => <PendingUsersRoute pendingUsers={pendingUsers} approveUser={approveUser} />,
   });
 
   return (
