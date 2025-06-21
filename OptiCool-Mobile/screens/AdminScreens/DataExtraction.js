@@ -1,5 +1,13 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ScrollView,
+} from "react-native";
 import dmt3API from "../../services/dmt3API";
 import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
@@ -16,7 +24,6 @@ const DataExtraction = () => {
         timestamp: entry.timestamp,
         consumption: entry.consumption,
       }));
-
       await axios.post(`${baseURL}/save/data`, { power: formattedData });
       Alert.alert("Success", "Power data fetched and saved.");
     } catch (error) {
@@ -98,57 +105,135 @@ const DataExtraction = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Data Extraction</Text>
+    <View style={styles.wrapper}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.title}>Data Extraction</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleInsideHumidity}>
-        <Text style={styles.buttonText}>Extract Inside Humidity Data</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleOutsideHumidity}>
-        <Text style={styles.buttonText}>Extract Outside Humidity Data</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleInsideTemperature}>
-        <Text style={styles.buttonText}>Extract Inside Temperature Data</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handleOutsideTemperature}>
-        <Text style={styles.buttonText}>Extract Outside Temperature Data</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.button} onPress={handlePowerData}>
-        <Text style={styles.buttonText}>Extract Power Consumption</Text>
-      </TouchableOpacity>
+        <Card
+          label="Inside Humidity"
+          description="Get and save real-time humidity inside the room."
+          onPress={handleInsideHumidity}
+          image={require("../../assets/humidityextract.png")}
+        />
+        <Card
+          label="Outside Humidity"
+          description="Get and save real-time humidity outside the room."
+          onPress={handleOutsideHumidity}
+          image={require("../../assets/humidityextract.png")}
+        />
+        <Card
+          label="Inside Temperature"
+          description="Log inside temperature readings."
+          onPress={handleInsideTemperature}
+          image={require("../../assets/tempextract.png")}
+        />
+        <Card
+          label="Outside Temperature"
+          description="Log outside temperature readings."
+          onPress={handleOutsideTemperature}
+          image={require("../../assets/tempextract.png")}
+        />
+        <Card
+          label="Power Consumption"
+          description="Track energy usage from devices."
+          onPress={handlePowerData}
+          image={require("../../assets/powerextract.png")}
+        />
+      </ScrollView>
     </View>
   );
 };
 
+const Card = ({ label, description, onPress, image }) => (
+  <View style={styles.card}>
+    <View style={styles.leftSection}>
+      <View style={styles.imageBox}>
+        <Image source={image} style={styles.image} />
+      </View>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{label}</Text>
+        <Text style={styles.cardDesc}>{description}</Text>
+      </View>
+    </View>
+    <TouchableOpacity style={styles.cardButton} onPress={onPress}>
+      <Text style={styles.buttonText}>Extract</Text>
+    </TouchableOpacity>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
-    paddingTop: 80,
-    paddingHorizontal: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#f4f9fc",
+  },
+  scrollContainer: {
+    paddingTop: 50,
+    paddingBottom: 50,
+    paddingHorizontal: 16,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: 25,
     textAlign: "center",
-    color: "#333",
+    color: "#2c3e50",
   },
-  button: {
-    backgroundColor: "#4682B4",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginBottom: 20,
+  card: {
+    flexDirection: "row",
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 18,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    justifyContent: "space-between",
+  },
+  leftSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 10,
+  },
+  imageBox: {
+    width: 60,
+    height: 60,
+    backgroundColor: "white",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+  image: {
+    width: 50,
+    height: 50,
+  },
+  cardContent: {
+    flexShrink: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+    color: "#1f6f78",
+  },
+  cardDesc: {
+    fontSize: 13,
+    color: "#555",
+  },
+  cardButton: {
+    backgroundColor: "#50c4b6",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 50,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
-    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
 
