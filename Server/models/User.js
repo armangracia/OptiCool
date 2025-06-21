@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { generateCode, sendEmail } = require("../utils/mailer");
+const { type } = require("os");
 
 const userSchema = new mongoose.Schema(
   {
@@ -38,6 +39,10 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "user",
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
     },
     resetPasswordCode: String,
     resetPasswordCodeExpire: Date,

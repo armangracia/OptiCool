@@ -25,6 +25,8 @@ router.put('/update/role/:id', userController.updateRole);
 
 router.get('/active', userController.getActiveUsers);
 
+router.put("/approve/:id", userController.approveUser);
+
 // Add the new route for fetching the number of users
 // router.get('/users/number', userController.getNumberOfUsers);
 

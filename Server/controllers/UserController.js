@@ -266,3 +266,21 @@ exports.getNumberOfUsers = async (req, res) => {
         });
     }
 };
+
+exports.approveUser = async (req, res) => {
+  try {
+    const { isApproved } = req.body;
+    const { id } = req.params;
+
+    const user = await User.findByIdAndUpdate(id, { isApproved }, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: `User ${isApproved ? "approved" : "declined"} successfully.` });
+  } catch (error) {
+    console.error("Approve user error:", error);
+    res.status(500).json({ message: "Failed to update user status." });
+  }
+};
