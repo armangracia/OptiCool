@@ -27,6 +27,7 @@ import HelpDetails from "./screens/AdminScreens/HelpDetails";
 import ReportDetails from "./screens/AdminScreens/ReportDetails"; // Ensure correct import
 import PostList from "./screens/AdminScreens/PostList"; // Ensure correct import
 import NotificationScreen from "./screens/NotificationScreen";
+import DataExtraction from "./screens/AdminScreens/DataExtraction";
 
 const Stack = createStackNavigator();
 
@@ -60,6 +61,7 @@ export default function Main() {
           <Stack.Screen name="PostList" component={PostList} />
           <Stack.Screen name="HumidityUsage" component={HumidityUsage} />
           <Stack.Screen name="TemperatureUsage" component={TemperatureUsage} />
+          <Stack.Screen name="DataExtraction" component={DataExtraction} />
 
           <Stack.Screen
                 name="HelpDetails"

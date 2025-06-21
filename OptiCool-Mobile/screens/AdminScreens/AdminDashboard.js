@@ -47,36 +47,52 @@ const AdminDashboard = () => {
     {
       title: "Admin tools",
       data: [
-          {
-          icon: <Ionicons name="bar-chart-outline" size={24} color="#555" />, name: 'Activity Logs',
-          sub: 'Review recent actions and usage history',
-          action: () => navigation.navigate('ActivityLog')
+        {
+          icon: <Ionicons name="download-outline" size={24} color="#555" />,
+          name: "Data Extraction",
+          sub: "Export temperature, humidity, and power consumption data",
+          action: () => navigation.navigate("DataExtraction"),
         },
         {
-          icon: <Ionicons name="document-text-outline" size={24} color="#555" />, name: 'Reports',
-          sub: 'View submitted reports and their details',
-          action: () => navigation.navigate('ReportDetails', { reports })
+          icon: <Ionicons name="bar-chart-outline" size={24} color="#555" />,
+          name: "Activity Logs",
+          sub: "Review recent actions and usage history",
+          action: () => navigation.navigate("ActivityLog"),
         },
         {
-          icon: <Ionicons name="help-circle-outline" size={24} color="#555" />, name: 'FAQs',
-          sub: 'Access and manage frequently asked questions',
-          action: () => navigation.navigate('HelpCenter')
+          icon: (
+            <Ionicons name="document-text-outline" size={24} color="#555" />
+          ),
+          name: "Reports",
+          sub: "View submitted reports and their details",
+          action: () => navigation.navigate("ReportDetails", { reports }),
         },
         {
-          icon: <Ionicons name="people-outline" size={24} color="#555" />, name: 'Users',
-          sub: 'View and manage all registered users',
-          action: () => navigation.navigate('UsersAll')
+          icon: <Ionicons name="help-circle-outline" size={24} color="#555" />,
+          name: "FAQs",
+          sub: "Access and manage frequently asked questions",
+          action: () => navigation.navigate("HelpCenter"),
         },
         {
-          icon: <Ionicons name="person-circle-outline" size={24} color="#555" />, name: 'Active Users',
-          sub: 'Monitor users currently active in the system',
-          action: () => navigation.navigate('ActiveUsers')
+          icon: <Ionicons name="people-outline" size={24} color="#555" />,
+          name: "Users",
+          sub: "View and manage all registered users",
+          action: () => navigation.navigate("UsersAll"),
         },
         {
-          icon: <Ionicons name="create-outline" size={24} color="#555" />, name: 'Edit Post',
-          sub: 'Modify or update existing help center posts',
-          action: () => navigation.navigate('PostList')
-        }
+          icon: (
+            <Ionicons name="person-circle-outline" size={24} color="#555" />
+          ),
+          name: "Active Users",
+          sub: "Monitor users currently active in the system",
+          action: () => navigation.navigate("ActiveUsers"),
+        },
+        {
+          icon: <Ionicons name="create-outline" size={24} color="#555" />,
+          name: "Edit Post",
+          sub: "Modify or update existing help center posts",
+          action: () => navigation.navigate("PostList"),
+        },
       ],
     },
   ];

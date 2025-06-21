@@ -28,7 +28,7 @@ import RoomCarousel from "./HomeScreens/RoomCarousel";
 import baseURL from "../assets/common/baseUrl";
 import StatusCard from "./HomeScreens/StatusCard";
 import MainRow from "./HomeScreens/MainRow";
-import DMT3ROOM from "../services/dmt3API"
+import DMT3ROOM from "../services/dmt3API";
 import dmt3API from "../services/dmt3API";
 // import UpButton from "../assets/common/UpButton";
 
@@ -84,9 +84,15 @@ export default function Dashboard() {
           console.error("Error fetching weather data:", error.response.status);
         }
       } else if (error.request) {
-        console.error("No response received from AccuWeather API:", error.request);
+        console.error(
+          "No response received from AccuWeather API:",
+          error.request
+        );
       } else {
-        console.error("Error setting up request to AccuWeather API:", error.message);
+        console.error(
+          "Error setting up request to AccuWeather API:",
+          error.message
+        );
       }
     } finally {
       setIsRequesting(false);
@@ -148,7 +154,7 @@ export default function Dashboard() {
       if (user && user._id) {
         setUserOriginalInfo();
         fetchWeatherData();
-        getRoomTemp()
+        getRoomTemp();
       } else {
         console.error("Invalid user ID.");
       }
@@ -167,17 +173,41 @@ export default function Dashboard() {
   });
 
   const getPowerConsumption = async () => {
-    const data = await dmt3API.getPowerConsumptionAPI("2024-10-01", "2024-10-20");
+    const data = await dmt3API.getPowerConsumptionAPI(
+      "2024-10-01",
+      "2024-10-20"
+    );
     axios.post(`${baseURL}/save/data`, {
       power: data,
-    })
-  }
+    });
+  };
+
+  const getPowerConsumptionForRange = async (startDate, endDate) => {
+    try {
+      const data = await dmt3API.getPowerConsumptionAPI(startDate, endDate);
+
+      // Ensure each entry includes id, timestamp, and consumption
+      const formattedData = data.map((entry) => ({
+        id: entry.id, // explicitly include id
+        timestamp: entry.timestamp,
+        consumption: entry.consumption,
+      }));
+
+      await axios.post(`${baseURL}/save/data`, { power: formattedData });
+
+      Alert.alert("Success", "Power data fetched and saved with IDs.");
+      console.log("Formatted power data:", formattedData);
+    } catch (error) {
+      console.error("Error fetching power data:", error.message);
+      Alert.alert("Error", "Failed to fetch power data.");
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
-      getPowerConsumption()
+      getPowerConsumption();
     }, [])
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -295,9 +325,7 @@ export default function Dashboard() {
           <View style={[styles.tempCard, styles.roomTemperature]}>
             <Ionicons name="home-outline" size={24} color="white" />
             <Text style={styles.tempLabel}>Room Temperature</Text>
-            <Text style={styles.tempValue}>
-              {roomTemp || "--"}°C
-            </Text>
+            <Text style={styles.tempValue}>{roomTemp || "--"}°C</Text>
           </View>
 
           {/* Outside Temperature */}
@@ -309,6 +337,18 @@ export default function Dashboard() {
             </Text>
           </View>
         </View>
+
+        <Button
+          mode="contained"
+          style={{ marginTop: 20, backgroundColor: "#4f5e70", width: "88%" }}
+          onPress={() => {
+            const startDate = "2024-08-01";
+            const today = new Date().toISOString().split("T")[0]; // format: yyyy-mm-dd
+            getPowerConsumptionForRange(startDate, today);
+          }}
+        >
+          Fetch Power Data (Aug 2024 - Today)
+        </Button>
       </ScrollView>
     </SafeAreaView>
   );
@@ -326,7 +366,7 @@ const styles = StyleSheet.create({
     alignItems: "center", // Center horizontally
   },
   upButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     left: 20,
     zIndex: 1,
