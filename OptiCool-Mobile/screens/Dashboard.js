@@ -338,7 +338,7 @@ export default function Dashboard() {
           </View>
         </View>
 
-        <Button
+        {/* <Button
           mode="contained"
           style={{ marginTop: 20, backgroundColor: "#4f5e70", width: "88%" }}
           onPress={() => {
@@ -348,7 +348,7 @@ export default function Dashboard() {
           }}
         >
           Fetch Power Data (Aug 2024 - Today)
-        </Button>
+        </Button> */}
       </ScrollView>
     </SafeAreaView>
   );

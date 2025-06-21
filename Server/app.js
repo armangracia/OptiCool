@@ -46,4 +46,63 @@ app.post('/api/v1/save/data', async (req, res) => {
     });
 });
 
+app.post('/api/v1/save/inside-humidity', async (req, res) => {
+    try {
+        const jsonData = JSON.stringify(req.body.insideHumidity, null, 2);
+
+        // Write to a file
+        fs.writeFileSync('inside_humidity.json', jsonData, 'utf8');
+
+        res.json({
+            message: "Inside humidity data saved successfully",
+        });
+    } catch (error) {
+        console.error("Error saving inside humidity data:", error);
+        res.status(500).json({
+            message: "Failed to save inside humidity data",
+            error: error.message,
+        });
+    }
+});
+
+app.post('/api/v1/save/outside-humidity', async (req, res) => {
+    try {
+        const jsonData = JSON.stringify(req.body.outsideHumidity, null, 2);
+        fs.writeFileSync('outside_humidity.json', jsonData, 'utf8');
+        res.json({ message: "Outside humidity data saved successfully" });
+    } catch (error) {
+        console.error("Error saving outside humidity data:", error);
+        res.status(500).json({ message: "Failed to save outside humidity data", error: error.message });
+    }
+});
+
+app.post('/api/v1/save/inside-temperature', async (req, res) => {
+    try {
+        const jsonData = JSON.stringify(req.body.insideTemperature, null, 2);
+        fs.writeFileSync('inside_temperature.json', jsonData, 'utf8');
+        res.json({ message: "Inside temperature data saved successfully" });
+    } catch (error) {
+        console.error("Error saving inside temperature data:", error);
+        res.status(500).json({
+            message: "Failed to save inside temperature data",
+            error: error.message,
+        });
+    }
+});
+
+app.post('/api/v1/save/outside-temperature', async (req, res) => {
+    try {
+        const jsonData = JSON.stringify(req.body.outsideTemperature, null, 2);
+        fs.writeFileSync('outside_temperature.json', jsonData, 'utf8');
+        res.json({ message: "Outside temperature data saved successfully" });
+    } catch (error) {
+        console.error("Error saving outside temperature data:", error);
+        res.status(500).json({
+            message: "Failed to save outside temperature data",
+            error: error.message,
+        });
+    }
+});
+
+
 module.exports = app;
