@@ -228,7 +228,8 @@ const UsageTracking = () => {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
-              marginBottom: 10,
+              marginBottom: 5,
+              marginTop: 40,
             }}
           >
             <View
