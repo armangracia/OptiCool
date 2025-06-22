@@ -79,19 +79,19 @@ const ElectricityUsage = () => {
   const menuItems = [
     {
       icon: "tachometer",
-      title: "Usage Tracker",
+      title: "Power Consumption Tracker ",
       navigateTo: "UsageTracking",
       from: "UsageNavigations",
     },
     {
       icon: "cloud",
-      title: "Humidity Report",
+      title: "Humidity Report Tracker",
       navigateTo: "HumidityUsage",
       from: null,
     },
     {
       icon: "thermometer-half",
-      title: "Temperature Report",
+      title: "Temperature Report Tracker",
       navigateTo: "TemperatureUsage",
       from: null,
     },
