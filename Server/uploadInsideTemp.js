@@ -15,7 +15,7 @@ const temperatureSchema = new mongoose.Schema({
 const InsideTemperature = mongoose.model("InsideTemperature", temperatureSchema);
 
 // Read and parse JSON file
-const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/inside_temperature_records.json");
+const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/inside_temperature.json");
 const records = JSON.parse(rawData);
 
 // Convert and insert into MongoDB

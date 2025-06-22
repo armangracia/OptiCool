@@ -15,7 +15,7 @@ const humiditySchema = new mongoose.Schema({
 const InsideHumidity = mongoose.model("InsideHumidity", humiditySchema);
 
 // Read and parse JSON file
-const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/inside_humidity_records.json");
+const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/inside_humidity.json");
 const records = JSON.parse(rawData);
 
 // Convert and insert into MongoDB

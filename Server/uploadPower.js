@@ -7,24 +7,24 @@ mongoose.connect("mongodb+srv://angelpagalan:angelpagalan@cluster0.w5pzofs.mongo
   useUnifiedTopology: true,
 });
 
-const temperatureSchema = new mongoose.Schema({
+const PowerConsumptionSchema = new mongoose.Schema({
   timestamp: Date,
-  temperature: Number,
+  consumption: Number,
 });
 
-const OutsideTemperature = mongoose.model("OutsideTemperature", temperatureSchema);
+const PowerConsumption = mongoose.model("PowerConsumption", PowerConsumptionSchema);
 
 // Read and parse JSON file
-const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/outside_temperature.json");
+const rawData = fs.readFileSync("C:/Users/arman/Capstone/OptiCool/Server/power_consumption.json");
 const records = JSON.parse(rawData);
 
 // Convert and insert into MongoDB
 const formattedRecords = records.map(entry => ({
   timestamp: new Date(entry.timestamp),
-  temperature: parseFloat(entry.temperature),
+  consumption: parseFloat(entry.consumption),
 }));
 
-OutsideTemperature.insertMany(formattedRecords)
+PowerConsumption.insertMany(formattedRecords)
   .then(() => {
     console.log("Data inserted successfully!");
     mongoose.connection.close();
