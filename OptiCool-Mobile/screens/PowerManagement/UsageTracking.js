@@ -7,11 +7,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import axios from "axios";
+import { Picker } from "@react-native-picker/picker";
 import baseUrl from "../../assets/common/baseUrl";
 
 const UsageTracking = () => {
@@ -27,20 +29,44 @@ const UsageTracking = () => {
   const [monthlyUsage, setMonthlyUsage] = useState(300);
   const [loading, setLoading] = useState(false);
   const [powerData, setPowerData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [pageInput, setPageInput] = useState("");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentData = powerData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(powerData.length / itemsPerPage);
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const currentData = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   useEffect(() => {
     console.log("Component mounted, fetching initial data...");
     fetchPowerData();
   }, []);
+
+  useEffect(() => {
+    let filtered = powerData;
+
+    if (selectedYear !== "All") {
+      filtered = filtered.filter(
+        (item) =>
+          new Date(item.timestamp).getFullYear().toString() === selectedYear
+      );
+    }
+
+    if (selectedMonth !== "All") {
+      filtered = filtered.filter(
+        (item) =>
+          new Date(item.timestamp).getMonth().toString() === selectedMonth
+      );
+    }
+
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [selectedYear, selectedMonth, powerData]);
 
   const fetchPowerData = async () => {
     setLoading(true);
@@ -50,6 +76,7 @@ const UsageTracking = () => {
       );
       const data = response.data;
       setPowerData(data);
+      setFilteredData(data);
       setCurrentPage(1);
     } catch (error) {
       Alert.alert("Error", "Failed to fetch power data");
@@ -70,6 +97,7 @@ const UsageTracking = () => {
       });
       const data = response.data;
       setPowerData(data);
+      setFilteredData(data);
       setCurrentPage(1);
 
       const labels = data.map((item) =>
@@ -195,6 +223,87 @@ const UsageTracking = () => {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Picker
+                selectedValue={selectedYear}
+                onValueChange={(itemValue) => setSelectedYear(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="All Years" value="All" />
+                <Picker.Item label="2023" value="2023" />
+                <Picker.Item label="2024" value="2024" />
+                <Picker.Item label="2025" value="2025" />
+              </Picker>
+
+              <Picker
+                selectedValue={selectedMonth}
+                onValueChange={(itemValue) => setSelectedMonth(itemValue)}
+                style={styles.picker}
+              >
+                <Picker.Item label="All Months" value="All" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item
+                    key={i}
+                    label={new Date(0, i).toLocaleString("default", {
+                      month: "short",
+                    })} // Use 'long' for full month names
+                    value={i.toString()}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 6,
+                  width: 40,
+                  textAlign: "center",
+                }}
+                placeholder={`${currentPage}`}
+                keyboardType="numeric"
+                value={pageInput}
+                onChangeText={(text) => setPageInput(text)}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const page = parseInt(pageInput);
+                  if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                    setCurrentPage(page);
+                  } else {
+                    Alert.alert(
+                      "Invalid Page",
+                      `Please enter a number between 1 and ${totalPages}`
+                    );
+                  }
+                }}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: "#000",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Go</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Power Consumption Data</Text>
             <View style={styles.tableHeader}>
@@ -269,6 +378,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "45%",
+  },
+  picker: {
+    width: 120, // Increased from 100 or 120 to fit full text like "September" or "2025"
+    height: 44,
+    color: "#000",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
   },
   datePickerContainer: {
     flexDirection: "row",
@@ -373,31 +491,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   paginationContainer: {
-  flexDirection: "row",
-  justifyContent: "center",
-  alignItems: "center",
-  marginTop: 10,
-  gap: 10,
-},
-arrowButton: {
-  paddingVertical: 6,
-  paddingHorizontal: 14,
-  backgroundColor: "#000",
-  borderRadius: 6,
-},
-disabledArrowButton: {
-  backgroundColor: "#ccc",
-},
-arrowText: {
-  color: "#fff",
-  fontSize: 18,
-  fontWeight: "bold",
-},
-pageInfoText: {
-  fontSize: 14,
-  fontWeight: "bold",
-  color: "#333",
-},
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 10,
+  },
+  arrowButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    backgroundColor: "#000",
+    borderRadius: 6,
+  },
+  disabledArrowButton: {
+    backgroundColor: "#ccc",
+  },
+  arrowText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  pageInfoText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+  },
 });
 
 export default UsageTracking;
