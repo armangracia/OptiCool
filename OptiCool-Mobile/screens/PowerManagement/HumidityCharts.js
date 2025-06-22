@@ -10,66 +10,70 @@ import {
 import axios from "axios";
 import { BarChart } from "react-native-chart-kit";
 import { Picker } from "@react-native-picker/picker";
+import baseUrl from "../../assets/common/baseUrl";
 
-// Helper functions
-function sortByTimestamp(data) {
-  return [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-}
-
+// Group data by day
 function groupByDayAverage(data) {
   const daily = {};
-  data.forEach(row => {
-    const date = new Date(row.timestamp);
-    const key = date.toISOString().slice(0, 10);
-    if (!daily[key]) daily[key] = [];
-    daily[key].push(Number(row.humidity));
+  data.forEach((row) => {
+    const date = new Date(row.timestamp).toISOString().slice(0, 10);
+    if (!daily[date]) daily[date] = [];
+    daily[date].push(Number(row.humidity));
   });
+
   return Object.entries(daily)
     .sort(([a], [b]) => new Date(a) - new Date(b))
-    .map(([key, hums]) => {
-      const label = new Date(key).toLocaleDateString("default", {
-        month: "short",
-        day: "numeric",
-      });
-      const avg = hums.reduce((a, b) => a + b, 0) / hums.length;
-      return { key, label, avg: Number(avg.toFixed(2)) };
+    .map(([date, values]) => {
+      const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+      return {
+        label: new Date(date).toLocaleDateString("default", {
+          month: "short",
+          day: "numeric",
+        }),
+        avg: Number(avg.toFixed(2)),
+      };
     });
 }
 
+// Group data by month
 function groupByMonthAverage(data) {
   const monthly = {};
-  data.forEach(row => {
+  data.forEach((row) => {
     const date = new Date(row.timestamp);
     const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
     if (!monthly[key]) monthly[key] = [];
     monthly[key].push(Number(row.humidity));
   });
+
   return Object.entries(monthly)
     .sort(([a], [b]) => new Date(a) - new Date(b))
-    .map(([key, hums]) => {
+    .map(([key, values]) => {
       const [year, month] = key.split("-");
-      const label = `${new Date(year, month - 1).toLocaleString("default", {
-        month: "short",
-      })} ${year}`;
+      const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
       return {
-        key,
-        label,
-        avg: Number((hums.reduce((a, b) => a + b, 0) / hums.length).toFixed(2)),
+        label: `${new Date(year, month - 1).toLocaleString("default", {
+          month: "short",
+        })} ${year}`,
+        avg: Number(avg.toFixed(2)),
       };
     });
 }
 
-function alignGroupedData(grouped1, grouped2) {
-  const allKeys = Array.from(new Set([...grouped1.map(d => d.key), ...grouped2.map(d => d.key)])).sort();
-  const map1 = Object.fromEntries(grouped1.map(d => [d.key, d]));
-  const map2 = Object.fromEntries(grouped2.map(d => [d.key, d]));
-  return allKeys.map(key => ({
-    key,
-    label: map1[key]?.label || map2[key]?.label || key,
-    avg1: map1[key]?.avg ?? null,
-    avg2: map2[key]?.avg ?? null,
-  }));
-}
+// Chart config
+const chartConfig = (barColor) => ({
+  backgroundColor: "#fff",
+  backgroundGradientFrom: "#fff",
+  backgroundGradientTo: "#fff",
+  decimalPlaces: 2,
+  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  propsForLabels: {
+    fontSize: 10,
+  },
+  barPercentage: 0.5,
+  fillShadowGradient: barColor,
+  fillShadowGradientOpacity: 1,
+});
 
 const HumidityCharts = () => {
   const [insideHumidity, setInsideHumidity] = useState([]);
@@ -80,21 +84,12 @@ const HumidityCharts = () => {
   useEffect(() => {
     const fetchHumidities = async () => {
       try {
-        const insideRes = await axios.get(`${process.env.REACT_APP_API}/insidehumidities`);
-        const outsideRes = await axios.get(`${process.env.REACT_APP_API}/outsidehumidities`);
-        const getHumidityRes = await axios.get(`${process.env.REACT_APP_API}/gethumidity`);
-
-        const insideData = Array.isArray(insideRes.data) ? insideRes.data : [];
-        const outsideData = Array.isArray(outsideRes.data) ? outsideRes.data : [];
-        const getHumidityData = Array.isArray(getHumidityRes.data) ? getHumidityRes.data : [];
-
-        const sorted = [...getHumidityData].sort((a, b) => a.humidity - b.humidity);
-        const mid = Math.floor(sorted.length / 2);
-        const getHumidityInside = sorted.slice(0, mid);
-        const getHumidityOutside = sorted.slice(mid);
-
-        setInsideHumidity([...insideData, ...getHumidityInside]);
-        setOutsideHumidity([...outsideData, ...getHumidityOutside]);
+        const [insideRes, outsideRes] = await Promise.all([
+          axios.get(`${baseUrl}/inside-humidity/getinsideHumidity`),
+          axios.get(`${baseUrl}/outside-humidity/getoutsideHumidity`),
+        ]);
+        setInsideHumidity(insideRes.data || []);
+        setOutsideHumidity(outsideRes.data || []);
       } catch (err) {
         console.error("Error fetching humidity data:", err);
       } finally {
@@ -104,86 +99,91 @@ const HumidityCharts = () => {
     fetchHumidities();
   }, []);
 
-  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
+  const groupedInside =
+    viewMode === "daily"
+      ? groupByDayAverage(insideHumidity)
+      : groupByMonthAverage(insideHumidity);
 
-  const groupedOutside = viewMode === "daily" ? groupByDayAverage(outsideHumidity) : groupByMonthAverage(outsideHumidity);
-  const groupedInside = viewMode === "daily" ? groupByDayAverage(insideHumidity) : groupByMonthAverage(insideHumidity);
+  const groupedOutside =
+    viewMode === "daily"
+      ? groupByDayAverage(outsideHumidity)
+      : groupByMonthAverage(outsideHumidity);
 
-  const aligned = alignGroupedData(groupedOutside, groupedInside);
-  const labels = aligned.map(row => row.label);
+  const labels = groupedOutside.map((d) => d.label);
+  const insideData = groupedInside.map((d) => d.avg);
+  const outsideData = groupedOutside.map((d) => d.avg);
 
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        data: aligned.map(row => row.avg1),
-        color: () => "rgba(255, 193, 7, 0.8)",
-      },
-      {
-        data: aligned.map(row => row.avg2),
-        color: () => "rgba(33, 150, 243, 0.8)",
-      },
-    ],
-  };
+  if (loading)
+    return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>
-        {viewMode === "daily" ? "Daily Average Humidity" : "Monthly Average Humidity"}
-      </Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>
+          {viewMode === "daily"
+            ? "Daily Average Humidity"
+            : "Monthly Average Humidity"}
+        </Text>
 
-      <View style={styles.pickerWrapper}>
-        <Text style={styles.label}>View Mode:</Text>
-        <Picker
-          selectedValue={viewMode}
-          style={styles.picker}
-          onValueChange={(itemValue) => setViewMode(itemValue)}
-        >
-          <Picker.Item label="Daily" value="daily" />
-          <Picker.Item label="Monthly" value="monthly" />
-        </Picker>
+        <View style={styles.pickerWrapper}>
+          <Text style={styles.label}>View Mode:</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={viewMode}
+              style={styles.picker}
+              onValueChange={(itemValue) => setViewMode(itemValue)}
+              dropdownIconColor="#388e3c"
+            >
+              <Picker.Item label="Daily" value="daily" />
+              <Picker.Item label="Monthly" value="monthly" />
+            </Picker>
+          </View>
+        </View>
+
+        {/* Outside Humidity Chart */}
+        <View style={styles.chartSection}>
+          <Text style={styles.chartLabel}>Outside Humidity</Text>
+          <ScrollView horizontal>
+            <BarChart
+              data={{
+                labels,
+                datasets: [{ data: outsideData }],
+              }}
+              width={Math.max(labels.length * 60, Dimensions.get("window").width)}
+              height={250}
+              yAxisSuffix="%"
+              fromZero
+              chartConfig={chartConfig("rgba(255, 193, 7, 1)")}
+              verticalLabelRotation={0}
+              showValuesOnTopOfBars
+              withInnerLines
+              style={styles.chart}
+            />
+          </ScrollView>
+        </View>
+
+        {/* Inside Humidity Chart */}
+        <View style={styles.chartSection}>
+          <Text style={styles.chartLabel}>Inside Humidity</Text>
+          <ScrollView horizontal>
+            <BarChart
+              data={{
+                labels,
+                datasets: [{ data: insideData }],
+              }}
+              width={Math.max(labels.length * 60, Dimensions.get("window").width)}
+              height={250}
+              yAxisSuffix="%"
+              fromZero
+              chartConfig={chartConfig("rgba(33, 150, 243, 1)")}
+              verticalLabelRotation={0}
+              showValuesOnTopOfBars
+              withInnerLines
+              style={styles.chart}
+            />
+          </ScrollView>
+        </View>
       </View>
-
-      <ScrollView horizontal contentContainerStyle={{ paddingBottom: 20 }}>
-        <BarChart
-          data={{
-            labels,
-            datasets: [
-              {
-                data: aligned.map(row => row.avg1),
-                color: () => "rgba(255, 193, 7, 0.8)",
-              },
-              {
-                data: aligned.map(row => row.avg2),
-                color: () => "rgba(33, 150, 243, 0.8)",
-              },
-            ],
-            legend: ["Outside", "Inside"],
-          }}
-          width={Math.max(labels.length * 50, Dimensions.get("window").width)}
-          height={250}
-          yAxisSuffix="%"
-          fromZero
-          chartConfig={{
-            backgroundColor: "#fff",
-            backgroundGradientFrom: "#fff",
-            backgroundGradientTo: "#fff",
-            decimalPlaces: 2,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 8,
-            },
-            propsForDots: {
-              r: "4",
-              strokeWidth: "2",
-              stroke: "#fff",
-            },
-          }}
-          verticalLabelRotation={60}
-          style={{ borderRadius: 8 }}
-        />
-      </ScrollView>
     </ScrollView>
   );
 };
@@ -191,25 +191,59 @@ const HumidityCharts = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 12,
+    backgroundColor: "#eafaf1",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
     padding: 16,
-    backgroundColor: "#fafafa",
+    // elevation: 3,
+    // shadowColor: "#000",
+    // shadowOpacity: 0.1,
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowRadius: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: "center",
+    color: "#2e7d32",
   },
   pickerWrapper: {
-    marginVertical: 10,
-  },
-  picker: {
-    height: 40,
-    width: 180,
+    marginBottom: 16,
   },
   label: {
     fontWeight: "600",
+    marginBottom: 6,
+    color: "#333",
+  },
+  pickerContainer: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#d0f0c0",
+    borderWidth: 1,
+    borderColor: "#a5d6a7",
+  },
+  picker: {
+    height: 40,
+    width: "100%",
+    color: "#1b5e20",
+  },
+  chartSection: {
+    marginBottom: 24,
+  },
+  chartLabel: {
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 4,
+    color: "#555",
+    marginLeft: 4,
+  },
+  chart: {
+    borderRadius: 12,
+    marginVertical: 8,
   },
 });
 

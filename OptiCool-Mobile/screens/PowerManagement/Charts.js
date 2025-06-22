@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     alignItems: "center",
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#eafaf1",
   },
 });
 
