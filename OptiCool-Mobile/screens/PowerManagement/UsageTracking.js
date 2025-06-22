@@ -68,6 +68,8 @@ const UsageTracking = () => {
     setCurrentPage(1);
   }, [selectedYear, selectedMonth, powerData]);
 
+
+  
   const fetchPowerData = async () => {
     setLoading(true);
     try {

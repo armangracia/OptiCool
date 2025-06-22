@@ -78,6 +78,12 @@ const ElectricityUsage = () => {
 
   const menuItems = [
     {
+      icon: "bar-chart",
+      title: "Charts ",
+      navigateTo: "Charts",
+      from: "UsageNavigations",
+    },
+    {
       icon: "tachometer",
       title: "Power Consumption Tracker ",
       navigateTo: "UsageTracking",

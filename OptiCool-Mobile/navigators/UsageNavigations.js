@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import ElectricityUsage from "../screens/PowerManagement/ElectricityUsage";
 import UsageTracking from "../screens/PowerManagement/UsageTracking";
 import HumidityUsage from "../screens/PowerManagement/HumidityUsage";
+import Charts from "../screens/PowerManagement/Charts";
 
 const Stack = createStackNavigator();
 
@@ -20,7 +21,10 @@ const UsageNavigations = () => {
       <Stack.Screen name="Usage Tracker" component={UsageTracking} 
        options={{ headerShown: true }}
       />
-      <Stack.Screen name="Humidity Tracker" component={HumidityUsage} 
+      <Stack.Screen name="Humidity Tracker" component={HumidityUsage}
+       options={{ headerShown: true }}
+      />
+      <Stack.Screen name="Charts" component={Charts}
        options={{ headerShown: true }}
       />
     </Stack.Navigator>
