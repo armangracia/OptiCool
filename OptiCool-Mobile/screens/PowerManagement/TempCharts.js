@@ -10,18 +10,14 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import axios from "axios";
 import { BarChart } from "react-native-chart-kit";
-
-function sortByTimestamp(data) {
-  return [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-}
+import baseUrl from "../../assets/common/baseUrl";
 
 function groupByDayAverage(data) {
   const daily = {};
   data.forEach(row => {
-    const date = new Date(row.timestamp);
-    const key = date.toISOString().slice(0, 10);
-    if (!daily[key]) daily[key] = [];
-    daily[key].push(Number(row.temperature));
+    const date = new Date(row.timestamp).toISOString().slice(0, 10);
+    if (!daily[date]) daily[date] = [];
+    daily[date].push(Number(row.temperature));
   });
   return Object.entries(daily)
     .sort(([a], [b]) => new Date(a) - new Date(b))
@@ -70,6 +66,21 @@ function alignGroupedData(grouped1, grouped2) {
   }));
 }
 
+const chartConfig = (barColor) => ({
+  backgroundColor: "#fff",
+  backgroundGradientFrom: "#fff",
+  backgroundGradientTo: "#fff",
+  decimalPlaces: 2,
+  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  propsForLabels: {
+    fontSize: 10,
+  },
+  barPercentage: 0.5,
+  fillShadowGradient: barColor,
+  fillShadowGradientOpacity: 1,
+});
+
 const TempCharts = () => {
   const [insideTemperature, setInsideTemperature] = useState([]);
   const [outsideTemperature, setOutsideTemperature] = useState([]);
@@ -79,25 +90,14 @@ const TempCharts = () => {
   useEffect(() => {
     const fetchTemperatures = async () => {
       try {
-        const [insideRes, outsideRes, getTemperatureRes] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_API}/insidetemperatures`),
-          axios.get(`${process.env.REACT_APP_API}/outsidetemperatures`),
-          axios.get(`${process.env.REACT_APP_API}/gettemperature`)
+        const [insideRes, outsideRes] = await Promise.all([
+          axios.get(`${baseUrl}/inside-temperature/getinsideTemperature`),
+          axios.get(`${baseUrl}/outside-temperature/getoutsideTemperature`),
         ]);
-
-        const insideData = Array.isArray(insideRes.data) ? insideRes.data : [];
-        const outsideData = Array.isArray(outsideRes.data) ? outsideRes.data : [];
-        const getTemperatureData = Array.isArray(getTemperatureRes.data) ? getTemperatureRes.data : [];
-
-        const sorted = [...getTemperatureData].sort((a, b) => a.temperature - b.temperature);
-        const mid = Math.floor(sorted.length / 2);
-        const getTemperatureInside = sorted.slice(0, mid);
-        const getTemperatureOutside = sorted.slice(mid);
-
-        setInsideTemperature([...insideData, ...getTemperatureInside]);
-        setOutsideTemperature([...outsideData, ...getTemperatureOutside]);
-      } catch (error) {
-        console.error("Error fetching temperature data:", error);
+        setInsideTemperature(insideRes.data || []);
+        setOutsideTemperature(outsideRes.data || []);
+      } catch (err) {
+        console.error("Error fetching temperature data:", err);
       } finally {
         setLoading(false);
       }
@@ -106,70 +106,78 @@ const TempCharts = () => {
     fetchTemperatures();
   }, []);
 
-  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
-
-  const groupedOutside = viewMode === "daily" ? groupByDayAverage(outsideTemperature) : groupByMonthAverage(outsideTemperature);
   const groupedInside = viewMode === "daily" ? groupByDayAverage(insideTemperature) : groupByMonthAverage(insideTemperature);
+  const groupedOutside = viewMode === "daily" ? groupByDayAverage(outsideTemperature) : groupByMonthAverage(outsideTemperature);
   const aligned = alignGroupedData(groupedOutside, groupedInside);
 
   const labels = aligned.map(row => row.label);
-  const chartWidth = Math.max(labels.length * 50, Dimensions.get("window").width);
+  const chartWidth = Math.max(labels.length * 60, Dimensions.get("window").width);
+
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>
-        {viewMode === "daily" ? "Daily Average Inside & Outside Temperature" : "Monthly Average Inside & Outside Temperature"}
+        {viewMode === "daily" ? "Daily Average Temperature" : "Monthly Average Temperature"}
       </Text>
 
       <View style={styles.pickerWrapper}>
         <Text style={styles.label}>View Mode:</Text>
-        <Picker
-          selectedValue={viewMode}
-          style={styles.picker}
-          onValueChange={value => setViewMode(value)}
-        >
-          <Picker.Item label="Daily" value="daily" />
-          <Picker.Item label="Monthly" value="monthly" />
-        </Picker>
+        <View style={styles.pickerBox}>
+          <Picker
+            selectedValue={viewMode}
+            style={styles.picker}
+            onValueChange={(value) => setViewMode(value)}
+          >
+            <Picker.Item label="Daily" value="daily" />
+            <Picker.Item label="Monthly" value="monthly" />
+          </Picker>
+        </View>
       </View>
 
-      <ScrollView horizontal contentContainerStyle={{ paddingBottom: 20 }}>
-        <BarChart
-          data={{
-            labels,
-            datasets: [
-              {
-                data: aligned.map(row => row.avg1),
-                color: () => "rgba(255, 99, 132, 0.8)",
-              },
-              {
-                data: aligned.map(row => row.avg2),
-                color: () => "rgba(54, 162, 235, 0.8)",
-              },
-            ],
-            legend: ["Outside", "Inside"],
-          }}
-          width={chartWidth}
-          height={250}
-          yAxisSuffix="°C"
-          fromZero
-          chartConfig={{
-            backgroundColor: "#fff",
-            backgroundGradientFrom: "#fff",
-            backgroundGradientTo: "#fff",
-            decimalPlaces: 2,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            propsForDots: {
-              r: "4",
-              strokeWidth: "2",
-              stroke: "#fff",
-            },
-          }}
-          verticalLabelRotation={60}
-          style={{ borderRadius: 8 }}
-        />
-      </ScrollView>
+      {/* Outside Temp Chart */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={styles.chartLabel}>Outside Temperature</Text>
+        <ScrollView horizontal>
+          <BarChart
+            data={{
+              labels,
+              datasets: [{ data: aligned.map(row => row.avg1) }],
+            }}
+            width={chartWidth}
+            height={250}
+            yAxisSuffix="°C"
+            fromZero
+            chartConfig={chartConfig("rgba(255, 99, 132, 1)")}
+            verticalLabelRotation={0}
+            showValuesOnTopOfBars
+            withInnerLines
+            style={styles.chart}
+          />
+        </ScrollView>
+      </View>
+
+      {/* Inside Temp Chart */}
+      <View style={{ marginBottom: 24 }}>
+        <Text style={styles.chartLabel}>Inside Temperature</Text>
+        <ScrollView horizontal>
+          <BarChart
+            data={{
+              labels,
+              datasets: [{ data: aligned.map(row => row.avg2) }],
+            }}
+            width={chartWidth}
+            height={250}
+            yAxisSuffix="°C"
+            fromZero
+            chartConfig={chartConfig("rgba(54, 162, 235, 1)")}
+            verticalLabelRotation={0}
+            showValuesOnTopOfBars
+            withInnerLines
+            style={styles.chart}
+          />
+        </ScrollView>
+      </View>
     </ScrollView>
   );
 };
@@ -178,7 +186,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#fafafa",
+    backgroundColor: "white",
+    borderRadius: 20,
+    margin: 8,
   },
   title: {
     fontSize: 18,
@@ -188,14 +198,34 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     marginVertical: 10,
-  },
-  picker: {
-    height: 40,
-    width: 180,
+    alignItems: "center",
   },
   label: {
     fontWeight: "600",
     marginBottom: 4,
+    marginRight: 185,
+  },
+  pickerBox: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#d0f0c0",
+    width: 260,
+    borderColor: "#a5d6a7",
+  },
+  picker: {
+    height: 40,
+    width: "100%",
+    color: "#1b5e20",
+  },
+  chart: {
+    borderRadius: 12,
+    marginVertical: 8,
+  },
+  chartLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+    marginLeft: 8,
   },
 });
 
