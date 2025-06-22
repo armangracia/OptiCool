@@ -10,138 +10,138 @@ import {
 import { Picker } from "@react-native-picker/picker";
 import { BarChart } from "react-native-chart-kit";
 import axios from "axios";
+import baseUrl from "../../assets/common/baseUrl";
 
 function groupByDayAverage(data) {
   const daily = {};
-  data.forEach(row => {
+  data.forEach((row) => {
     const date = new Date(row.timestamp);
     const key = date.toISOString().slice(0, 10);
     if (!daily[key]) daily[key] = [];
     daily[key].push(Number(row.consumption));
   });
+
   return Object.entries(daily)
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([key, vals]) => {
       const label = new Date(key).toLocaleDateString("default", {
         month: "short",
-        day: "numeric"
+        day: "numeric",
       });
       const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { key, label, avg: Number(avg.toFixed(2)) };
+      return { label, avg: Number(avg.toFixed(2)) };
     });
 }
 
 function groupByMonthAverage(data) {
   const monthly = {};
-  data.forEach(row => {
+  data.forEach((row) => {
     const date = new Date(row.timestamp);
     const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
     if (!monthly[key]) monthly[key] = [];
     monthly[key].push(Number(row.consumption));
   });
+
   return Object.entries(monthly)
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([key, vals]) => {
       const [year, month] = key.split("-");
       const label = `${new Date(year, month - 1).toLocaleString("default", {
-        month: "short"
+        month: "short",
       })} ${year}`;
       const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-      return { key, label, avg: Number(avg.toFixed(2)) };
+      return { label, avg: Number(avg.toFixed(2)) };
     });
 }
 
+const chartConfig = (barColor) => ({
+  backgroundColor: "#fff",
+  backgroundGradientFrom: "#fff",
+  backgroundGradientTo: "#fff",
+  decimalPlaces: 2,
+  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  propsForLabels: {
+    fontSize: 10,
+  },
+  barPercentage: 0.5,
+  fillShadowGradient: barColor,
+  fillShadowGradientOpacity: 1,
+});
+
 const PowerConsumptionCharts = () => {
   const [powerData, setPowerData] = useState([]);
-  const [predictedData, setPredictedData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("daily");
 
   useEffect(() => {
-    setLoading(true);
-    axios.get(`${process.env.REACT_APP_API}/powerconsumptions`)
-      .then(res => {
-        const data = Array.isArray(res.data) ? res.data : [];
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(
+          `${baseUrl}/power-consumption/getpowerconsumption`
+        );
+        const data = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        console.log("Fetched power data:", data);
         setPowerData(data);
-
-        const predictPayload = data.map(item => ({
-          timestamp: typeof item.timestamp === "object" && item.timestamp.$date
-            ? item.timestamp.$date
-            : item.timestamp,
-          consumption: item.consumption
-        }));
-
-        const mode = viewMode === "daily" ? "daily" : "monthly";
-
-        if (predictPayload.length > 0) {
-          axios.post(
-            `${process.env.REACT_APP_FLASK_API}/predictpower?mode=${mode}`,
-            predictPayload,
-            { headers: { "Content-Type": "application/json" } }
-          )
-            .then(res => {
-              if (Array.isArray(res.data)) {
-                setPredictedData(res.data);
-              }
-            })
-            .catch(err => {
-              console.error("Prediction API error:", err);
-              setPredictedData([]);
-            })
-            .finally(() => setLoading(false));
-        } else {
-          setPredictedData([]);
-          setLoading(false);
-        }
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Fetch error:", err);
         setPowerData([]);
-        setPredictedData([]);
+      } finally {
         setLoading(false);
-      });
-  }, [viewMode]);
+      }
+    };
 
-  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
+    fetchData();
+  }, []);
 
-  let grouped = viewMode === "daily"
-    ? groupByDayAverage(powerData)
-    : groupByMonthAverage(powerData);
-
-  let predicted = [];
-  if (viewMode === "monthly" && predictedData.length > 0) {
-    predicted = predictedData.map(entry => {
-      const d = new Date(entry.timestamp || entry.month);
-      const label = d.toLocaleString("default", { month: "short", year: "numeric" });
-      return {
-        label,
-        avg: Number(entry.consumption ? entry.consumption.toFixed(2) : entry.prediction.toFixed(2)),
-        predicted: true
-      };
-    });
-    grouped = [...grouped, ...predicted];
+  if (loading) {
+    return <ActivityIndicator size="large" style={{ marginTop: 20 }} />;
   }
 
-  const realData = grouped.filter(item => !item.predicted);
-  const chartLabels = grouped.map(row => row.label);
-  const chartWidth = Math.max(chartLabels.length * 50, Dimensions.get("window").width);
+  const grouped =
+    viewMode === "daily"
+      ? groupByDayAverage(powerData)
+      : groupByMonthAverage(powerData);
+
+  console.log("Grouped chart data:", grouped);
+
+  if (grouped.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 20 }}>
+          No power consumption data available.
+        </Text>
+      </View>
+    );
+  }
+
+  const chartLabels = grouped.map((row) => row.label);
+  const chartWidth = Math.max(
+    chartLabels.length * 60,
+    Dimensions.get("window").width
+  );
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>
-        {viewMode === "daily" ? "Daily Average Power Consumption" : "Monthly Average Power Consumption"}
+        {viewMode === "daily"
+          ? "Daily Average Power Consumption"
+          : "Monthly Average Power Consumption"}
       </Text>
 
       <View style={styles.pickerWrapper}>
         <Text style={styles.label}>View Mode:</Text>
-        <Picker
-          selectedValue={viewMode}
-          onValueChange={value => setViewMode(value)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Daily" value="daily" />
-          <Picker.Item label="Monthly" value="monthly" />
-        </Picker>
+        <View style={styles.pickerBox}>
+          <Picker
+            selectedValue={viewMode}
+            onValueChange={(value) => setViewMode(value)}
+            style={styles.picker}
+          >
+            <Picker.Item label="Daily" value="daily" />
+            <Picker.Item label="Monthly" value="monthly" />
+          </Picker>
+        </View>
       </View>
 
       <ScrollView horizontal>
@@ -150,43 +150,21 @@ const PowerConsumptionCharts = () => {
             labels: chartLabels,
             datasets: [
               {
-                data: realData.map(row => row.avg),
+                data: grouped.map((row) => row.avg),
                 color: () => "rgba(255, 159, 64, 0.8)",
               },
-              ...(predicted.length > 0
-                ? [{
-                    data: [
-                      ...Array(realData.length).fill(null),
-                      ...predicted.map(row => row.avg)
-                    ],
-                    color: () => "rgba(75, 192, 192, 0.6)",
-                  }]
-                : [])
             ],
-            legend: ["Actual", ...(predicted.length > 0 ? ["Predicted"] : [])]
+            legend: ["Actual"],
           }}
           width={chartWidth}
           height={250}
           yAxisSuffix="kWh"
           fromZero
-          chartConfig={{
-            backgroundColor: "#fff",
-            backgroundGradientFrom: "#fff",
-            backgroundGradientTo: "#fff",
-            decimalPlaces: 2,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          }}
+          chartConfig={chartConfig("rgba(255, 159, 64, 0.8)")}
           verticalLabelRotation={60}
-          style={{ borderRadius: 8 }}
+          style={styles.chart}
         />
       </ScrollView>
-
-      {viewMode === "monthly" && predicted.length > 0 && (
-        <Text style={styles.note}>
-          *Predicted values for the next 3 months based on historical data
-        </Text>
-      )}
     </ScrollView>
   );
 };
@@ -194,7 +172,9 @@ const PowerConsumptionCharts = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#fafafa",
+    backgroundColor: "white",
+    borderRadius: 20,
+    margin: 8,
     flex: 1,
   },
   title: {
@@ -205,21 +185,28 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     marginBottom: 16,
+    alignItems: "center",
+  },
+  pickerBox: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#d0f0c0",
+    width: 260,
+    borderColor: "#a5d6a7",
   },
   picker: {
-    height: 44,
-    width: 180,
+    height: 40,
+    width: "100%",
+    color: "#1b5e20",
   },
   label: {
-    marginBottom: 4,
     fontWeight: "600",
+    marginBottom: 4,
+    marginRight: 185,
   },
-  note: {
-    marginTop: 12,
-    fontSize: 12,
-    fontStyle: "italic",
-    textAlign: "center",
-    color: "#555",
+  chart: {
+    borderRadius: 12,
+    marginVertical: 8,
   },
 });
 
