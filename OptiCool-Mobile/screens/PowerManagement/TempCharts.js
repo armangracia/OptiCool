@@ -191,10 +191,11 @@ const styles = StyleSheet.create({
     margin: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 12,
     textAlign: "center",
+    color: "#2e7d32",
   },
   pickerWrapper: {
     marginVertical: 10,

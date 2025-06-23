@@ -178,10 +178,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 18,
+     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 12,
     textAlign: "center",
+    color: "#2e7d32",
   },
   pickerWrapper: {
     marginBottom: 16,
