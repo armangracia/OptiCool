@@ -1,27 +1,38 @@
+import React from "react";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Profile from "../screens/UserScreens/Profile";
-import Dashboard from "../screens/Dashboard";
-import DeviceInfo from "../screens/PowerManagement/DeviceInfo";
-import ElectricityUsage from "../screens/PowerManagement/ElectricityUsage";
-import ProfileNavigation from "./ProfileNavigation";
-import { Avatar } from "react-native-paper";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "react-native-vector-icons";
+
+import Dashboard from "../screens/Dashboard";
 import Environment from "../screens/EStatusScreens/EnvironmentStatus";
+import ElectricityUsage from "../screens/PowerManagement/ElectricityUsage";
 import Report from "../screens/AdminScreens/EReport";
-import MockupDashboard from "../screens/UserScreens/MockupDashboard"; // Import the mock-up dashboard screen
-import ReportDetails from "../screens/AdminScreens/ReportDetails"; // Ensure correct import
-import AdminDashboard from "../screens/AdminScreens/AdminDashboard"; // Ensure correct import
+import ReportDetails from "../screens/AdminScreens/ReportDetails";
+import AdminDashboard from "../screens/AdminScreens/AdminDashboard";
+import ProfileNavigation from "./ProfileNavigation";
+import MockupDashboard from "../screens/UserScreens/MockupDashboard";
+import { removeAuth } from "../states/authSlice";
 
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs() {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    dispatch(removeAuth());
+    navigation.replace("Login");
+  };
 
   return (
     <Tab.Navigator
       initialRouteName={
-        user.role === "superadmin" || user.role === "admin" ? "Dashboard" : "MockupDashboard"
+        user.role === "superadmin" || user.role === "admin"
+          ? "Dashboard"
+          : "MockupDashboard"
       }
       screenOptions={{
         tabBarShowLabel: false,
@@ -41,110 +52,142 @@ export default function BottomTabs() {
           shadowRadius: 3.5,
           elevation: 5,
         },
-        tabBarActiveTintColor: "#000000", // Black color for active state
-        tabBarInactiveTintColor: "#7a7a7a", // Optional: Gray color for inactive state
+        tabBarActiveTintColor: "#000000",
+        tabBarInactiveTintColor: "#7a7a7a",
       }}
     >
-      {(user.role === "superadmin" || user.role === "admin") ? (
+      {user.role === "superadmin" || user.role === "admin" ? (
         <>
           <Tab.Screen
             name="Dashboard"
             component={Dashboard}
             options={{
-              tabBarShowLabel: false,
-              tabBarIcon: ({ focused }) => {
-                const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-                return (
-                  <MaterialCommunityIcons name="home" size={30} color={iconColor} />
-                );
-              },
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="home"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
             }}
           />
           <Tab.Screen
             name="Status"
             component={Environment}
             options={{
-              tabBarShowLabel: false,
-              tabBarIcon: ({ focused }) => {
-                const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-                return (
-                  <MaterialCommunityIcons name="widgets" size={30} color={iconColor} />
-                );
-              },
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="widgets"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
             }}
           />
           <Tab.Screen
             name="Usage"
             component={ElectricityUsage}
             options={{
-              tabBarShowLabel: false,
-              tabBarIcon: ({ focused }) => {
-                const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-                return (
-                  <MaterialCommunityIcons name="lightning-bolt" size={30} color={iconColor} />
-                );
-              },
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="lightning-bolt"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
             }}
           />
           <Tab.Screen
             name="Reports"
             component={Report}
             options={{
-              tabBarShowLabel: false,
-              tabBarIcon: ({ focused }) => {
-                const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-                return (
-                  <MaterialCommunityIcons name="alert-decagram" size={30} color={iconColor} />
-                );
-              },
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="alert-decagram"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
             }}
           />
           <Tab.Screen
             name="Accounts"
             component={ProfileNavigation}
             options={{
-              tabBarShowLabel: false,
-              headerShown: false,
-              tabBarIcon: ({ focused }) => {
-                const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-                return (
-                  <MaterialCommunityIcons name="account-circle" size={30} color={iconColor} />
-                );
-              },
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="account-circle"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
             }}
           />
           <Tab.Screen
             name="ReportDetails"
             component={ReportDetails}
             options={{
-              tabBarButton: () => null, // Hide the tab bar button
-              tabBarVisible: false, // Hide the tab bar
+              tabBarButton: () => null,
             }}
           />
           <Tab.Screen
             name="AdminDashboard"
             component={AdminDashboard}
             options={{
-              tabBarButton: () => null, // Hide the tab bar button
-              tabBarVisible: false, // Hide the tab bar
+              tabBarButton: () => null,
             }}
           />
         </>
       ) : (
-        <Tab.Screen
-          name="MockupDashboard"
-          component={MockupDashboard}
-          options={{
-            tabBarShowLabel: false,
-            tabBarIcon: ({ focused }) => {
-              const iconColor = focused ? "#000000" : "#7a7a7a"; // Black when active, gray when inactive
-              return (
-                <MaterialCommunityIcons name="home" size={30} color={iconColor} />
-              );
-            },
-          }}
-        />
+        <>
+          <Tab.Screen
+            name="MockupDashboard"
+            component={MockupDashboard}
+            options={{
+              tabBarIcon: ({ focused }) => (
+                <MaterialCommunityIcons
+                  name="home"
+                  size={30}
+                  color={focused ? "#000" : "#7a7a7a"}
+                />
+              ),
+            }}
+          />
+          <Tab.Screen
+            name="Logout"
+            component={() => null}
+            options={{
+              tabBarButton: (props) => (
+                <TouchableOpacity
+                  {...props}
+                  onPress={handleLogout}
+                  style={[styles.logoutButton, props.style]}
+                >
+                  <MaterialCommunityIcons
+                    name="logout"
+                    size={28}
+                    color="#e53935"
+                  />
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              ),
+            }}
+          />
+        </>
       )}
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  logoutButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 5,
+  },
+  logoutText: {
+    fontSize: 11,
+    color: "#e53935",
+    fontWeight: "bold",
+  },
+});
