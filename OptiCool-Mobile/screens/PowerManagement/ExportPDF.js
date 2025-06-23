@@ -1,62 +1,53 @@
 import React, { useRef } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { shareAsync } from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
-import { BarChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
+import * as Print from 'expo-print';
+
+import HumidityCharts from './HumidityCharts';
+import TempCharts from './TempCharts';
+import PowerConsumptionCharts from './PowerConsumptionCharts';
 
 const ExportPDF = () => {
-  const chartRef = useRef();
+  const humidityRef = useRef();
+  const tempRef = useRef();
+  const powerRef = useRef();
 
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-    datasets: [
-      {
-        data: [45, 56, 78, 40, 67],
-        color: () => `rgba(0, 128, 255, 1)`
-      },
-    ],
-  };
-
-  const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  const captureChart = async (ref) => {
+    const uri = await captureRef(ref, {
+      format: 'png',
+      quality: 1,
+    });
+    return await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
   };
 
   const handleExport = async () => {
     try {
-      // Capture the chart image
-      const uri = await captureRef(chartRef, {
-        format: 'png',
-        quality: 1,
-      });
+      const [humidityImg, tempImg, powerImg] = await Promise.all([
+        captureChart(humidityRef),
+        captureChart(tempRef),
+        captureChart(powerRef),
+      ]);
 
-      const base64Image = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      // Generate HTML with embedded chart image
       const htmlContent = `
         <html>
-          <body style="font-family: Arial; text-align: center;">
-            <h1>Humidity / Temperature Chart</h1>
-            <img src="data:image/png;base64,${base64Image}" style="width: 100%;" />
+          <body style="font-family: Arial; text-align: center; padding: 20px;">
+            <h2>Temperature & Humidity Usage Chart</h2>
+            <img src="data:image/png;base64,${tempImg}" style="width: 100%; max-width: 700px; margin-bottom: 40px;" />
+            
+            <h2>Humidity Usage Chart</h2>
+            <img src="data:image/png;base64,${humidityImg}" style="width: 100%; max-width: 700px; margin-bottom: 40px;" />
+            
+            <h2>Power Consumption Chart</h2>
+            <img src="data:image/png;base64,${powerImg}" style="width: 100%; max-width: 700px;" />
           </body>
         </html>
       `;
 
-      const { uri: pdfUri } = await RNHTMLtoPDF.convert({
-        html: htmlContent,
-        fileName: 'ChartReport',
-        base64: false,
-      });
-
+      const { uri: pdfUri } = await Print.printToFileAsync({ html: htmlContent });
       await shareAsync(pdfUri);
     } catch (error) {
       console.error('Export failed:', error);
@@ -64,23 +55,26 @@ const ExportPDF = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Export Sample Chart to PDF</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Export All Usage Charts to PDF</Text>
 
-      <View ref={chartRef} collapsable={false}>
-        <BarChart
-          data={chartData}
-          width={Dimensions.get('window').width - 32}
-          height={220}
-          chartConfig={chartConfig}
-          fromZero
-          showValuesOnTopOfBars
-          style={styles.chart}
-        />
+      {/* Humidity Chart */}
+      <View ref={tempRef} collapsable={false}>
+        <TempCharts />
+      </View>
+
+      {/* Temperature Chart */}
+      <View ref={humidityRef} collapsable={false}>
+        <HumidityCharts />
+      </View>
+
+      {/* Power Chart */}
+      <View ref={powerRef} collapsable={false}>
+        <PowerConsumptionCharts />
       </View>
 
       <Button title="Export PDF" onPress={handleExport} />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -88,16 +82,13 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     backgroundColor: '#fff',
-    flex: 1,
+    alignItems: 'center',
   },
   header: {
     fontSize: 18,
-    marginBottom: 12,
+    marginBottom: 16,
+    fontWeight: 'bold',
     textAlign: 'center',
-  },
-  chart: {
-    borderRadius: 8,
-    marginBottom: 24,
   },
 });
 

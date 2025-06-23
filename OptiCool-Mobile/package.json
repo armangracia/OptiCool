@@ -51,11 +51,13 @@
     "react-native-snap-carousel": "^3.9.1",
     "react-native-svg": "^15.9.0",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-view-shot": "^3.8.0",
+    "react-native-view-shot": "3.8.0",
     "react-redux": "^9.1.2",
     "redux-persist": "^6.0.0",
     "socket.io-client": "^4.8.1",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "expo-print": "~13.0.1",
+    "expo-web-browser": "~13.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

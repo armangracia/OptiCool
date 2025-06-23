@@ -12,7 +12,7 @@ const Charts = () => {
       showsVerticalScrollIndicator={false}
       showsHorizontalScrollIndicator={false}
     >
-      <ExportPDF />
+      {/* <ExportPDF /> */}
       <HumidityCharts />
       <TempCharts />
       <PowerConsumptionCharts />
