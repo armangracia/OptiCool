@@ -161,7 +161,7 @@ const PowerConsumptionCharts = () => {
           yAxisSuffix="kWh"
           fromZero
           chartConfig={chartConfig("rgba(255, 159, 64, 0.8)")}
-          verticalLabelRotation={60}
+          horizontallLabelRotation={100}
           style={styles.chart}
         />
       </ScrollView>
