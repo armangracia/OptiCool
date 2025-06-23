@@ -68,8 +68,6 @@ const UsageTracking = () => {
     setCurrentPage(1);
   }, [selectedYear, selectedMonth, powerData]);
 
-
-  
   const fetchPowerData = async () => {
     setLoading(true);
     try {
@@ -91,21 +89,41 @@ const UsageTracking = () => {
   const fetchPowerDataByDate = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/powerconsumption/range`, {
+      const response = await axios.get(`${baseUrl}/power-consumption/range`, {
         params: {
           start: startDate.toISOString(),
           end: endDate.toISOString(),
         },
       });
+
       const data = response.data;
-      setPowerData(data);
-      setFilteredData(data);
+
+      // Apply the same filtering logic used for selectedYear/Month below (if any)
+      let filtered = data;
+
+      if (selectedYear !== "All") {
+        filtered = filtered.filter(
+          (item) =>
+            new Date(item.timestamp).getFullYear().toString() === selectedYear
+        );
+      }
+
+      if (selectedMonth !== "All") {
+        filtered = filtered.filter(
+          (item) =>
+            new Date(item.timestamp).getMonth().toString() === selectedMonth
+        );
+      }
+
+      setPowerData(filtered); // optionally keep this as raw 'data' if needed
+      setFilteredData(filtered);
       setCurrentPage(1);
 
-      const labels = data.map((item) =>
+      const labels = filtered.map((item) =>
         new Date(item.timestamp).toLocaleDateString()
       );
-      const consumptionData = data.map((item) => item.consumption);
+      const consumptionData = filtered.map((item) => item.consumption);
+
       setChartData({
         labels,
         datasets: [{ data: consumptionData }],
