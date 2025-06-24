@@ -22,11 +22,11 @@ const UsageTracking = () => {
   const [openStartPicker, setOpenStartPicker] = useState(false);
   const [openEndPicker, setOpenEndPicker] = useState(false);
   const [chartData, setChartData] = useState({
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [{ data: [20, 45, 28, 80, 99, 43] }],
+    labels: [],
+    datasets: [{ data: [] }],
   });
-  const [todayUsage, setTodayUsage] = useState(50);
-  const [monthlyUsage, setMonthlyUsage] = useState(300);
+  const [todayUsage, setTodayUsage] = useState(0);
+  const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [powerData, setPowerData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -34,7 +34,6 @@ const UsageTracking = () => {
   const [selectedMonth, setSelectedMonth] = useState("All");
   const [pageInput, setPageInput] = useState("");
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -43,7 +42,6 @@ const UsageTracking = () => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   useEffect(() => {
-    console.log("Component mounted, fetching initial data...");
     fetchPowerData();
   }, []);
 
@@ -96,9 +94,29 @@ const UsageTracking = () => {
         },
       });
 
+      function groupByDayAverage(data) {
+        const daily = {};
+        data.forEach((row) => {
+          const date = new Date(row.timestamp);
+          const key = date.toISOString().slice(0, 10);
+          if (!daily[key]) daily[key] = [];
+          daily[key].push(Number(row.consumption));
+        });
+
+        return Object.entries(daily)
+          .sort(([a], [b]) => new Date(a) - new Date(b))
+          .map(([key, vals]) => {
+            const label = new Date(key).toLocaleDateString("default", {
+              month: "short",
+              day: "numeric",
+            });
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            return { label, avg: Number(avg.toFixed(2)) };
+          });
+      }
+
       const data = response.data;
 
-      // Apply the same filtering logic used for selectedYear/Month below (if any)
       let filtered = data;
 
       if (selectedYear !== "All") {
@@ -115,25 +133,21 @@ const UsageTracking = () => {
         );
       }
 
-      setPowerData(filtered); // optionally keep this as raw 'data' if needed
+      setPowerData(filtered);
       setFilteredData(filtered);
       setCurrentPage(1);
 
-      const labels = filtered.map((item) =>
-        new Date(item.timestamp).toLocaleDateString()
-      );
-      const consumptionData = filtered.map((item) => item.consumption);
+      const grouped = groupByDayAverage(filtered);
+      const labels = grouped.map((row) => row.label);
+      const values = grouped.map((row) => row.avg);
 
       setChartData({
         labels,
-        datasets: [{ data: consumptionData }],
+        datasets: [{ data: values }],
       });
 
-      const totalConsumption = consumptionData.reduce(
-        (acc, value) => acc + value,
-        0
-      );
-      setTodayUsage(consumptionData[consumptionData.length - 1] || 0);
+      const totalConsumption = values.reduce((acc, value) => acc + value, 0);
+      setTodayUsage(values[values.length - 1] || 0);
       setMonthlyUsage(totalConsumption);
     } catch (error) {
       Alert.alert("Error", "Failed to fetch power data by date range");
@@ -144,8 +158,7 @@ const UsageTracking = () => {
   };
 
   const handleSearch = () => {
-    console.log("Search button pressed, fetching data for new date range...");
-    fetchPowerDataByDate();
+    setTimeout(fetchPowerDataByDate, 100);
   };
 
   return (
@@ -174,28 +187,32 @@ const UsageTracking = () => {
             </View>
           </View>
 
-          <BarChart
-            data={chartData}
-            width={Dimensions.get("window").width - 20}
-            height={220}
-            yAxisLabel="kW"
-            chartConfig={{
-              backgroundGradientFrom: "#1E2923",
-              backgroundGradientTo: "#08130D",
-              decimalPlaces: 2,
-              color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: "#ffa726",
-              },
-            }}
-            style={styles.chart}
-          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartData}
+              width={Math.max(
+                chartData.labels.length * 60,
+                Dimensions.get("window").width
+              )}
+              height={220}
+              yAxisLabel="kW"
+              chartConfig={{
+                backgroundGradientFrom: "#1E2923",
+                backgroundGradientTo: "#08130D",
+                decimalPlaces: 2,
+                color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+                labelColor: (opacity = 1) =>
+                  `rgba(255, 255, 255, ${opacity})`,
+                style: { borderRadius: 16 },
+                propsForDots: {
+                  r: "6",
+                  strokeWidth: "2",
+                  stroke: "#ffa726",
+                },
+              }}
+              style={styles.chart}
+            />
+          </ScrollView>
 
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
@@ -221,7 +238,6 @@ const UsageTracking = () => {
               onChange={(event, selectedDate) => {
                 setOpenStartPicker(false);
                 if (selectedDate) setStartDate(selectedDate);
-                console.log("Start date selected:", selectedDate);
               }}
             />
           )}
@@ -234,7 +250,6 @@ const UsageTracking = () => {
               onChange={(event, selectedDate) => {
                 setOpenEndPicker(false);
                 if (selectedDate) setEndDate(selectedDate);
-                console.log("End date selected:", selectedDate);
               }}
             />
           )}
@@ -252,9 +267,7 @@ const UsageTracking = () => {
               marginTop: 40,
             }}
           >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Picker
                 selectedValue={selectedYear}
                 onValueChange={(itemValue) => setSelectedYear(itemValue)}
@@ -277,16 +290,14 @@ const UsageTracking = () => {
                     key={i}
                     label={new Date(0, i).toLocaleString("default", {
                       month: "short",
-                    })} // Use 'long' for full month names
+                    })}
                     value={i.toString()}
                   />
                 ))}
               </Picker>
             </View>
 
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-            >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <TextInput
                 style={{
                   borderWidth: 1,
@@ -377,6 +388,7 @@ const UsageTracking = () => {
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

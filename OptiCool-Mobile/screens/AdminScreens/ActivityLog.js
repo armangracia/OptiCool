@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 
-// Mock API to fetch activity logs
 const fetchActivityLogs = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -19,7 +18,6 @@ const ActivityLog = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch activity logs when the component mounts
     fetchActivityLogs().then((data) => {
       setLogs(data);
       setLoading(false);
@@ -29,8 +27,8 @@ const ActivityLog = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Loading activity logs...</Text>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text style={styles.loadingText}>Loading activity logs...</Text>
       </View>
     );
   }
@@ -43,10 +41,13 @@ const ActivityLog = () => {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.logItem}>
-            <Text style={styles.action}>{item.action}</Text>
-            <Text style={styles.timestamp}>{item.timestamp}</Text>
+            <View style={styles.logText}>
+              <Text style={styles.action}>{item.action}</Text>
+              <Text style={styles.timestamp}>{item.timestamp}</Text>
+            </View>
           </View>
         )}
+        contentContainerStyle={styles.listContent}
       />
     </View>
   );
@@ -55,37 +56,57 @@ const ActivityLog = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#eef3f7',
     padding: 20,
-    backgroundColor: '#f8f9fa',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#333',
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   logItem: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5, // For Android shadow effect
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  logText: {
+    flexDirection: 'column',
   },
   action: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 6,
   },
   timestamp: {
     fontSize: 14,
-    color: '#666',
+    color: '#7f8c8d',
+    backgroundColor: '#e8f5e9',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#eef3f7',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
 });
 

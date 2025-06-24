@@ -92,6 +92,27 @@ const PowerConsumptionCharts = () => {
       }
     };
 
+    function groupByDayAverage(data) {
+      const daily = {};
+      data.forEach((row) => {
+        const date = new Date(row.timestamp);
+        const key = date.toISOString().slice(0, 10);
+        if (!daily[key]) daily[key] = [];
+        daily[key].push(Number(row.consumption));
+      });
+
+      return Object.entries(daily)
+        .sort(([a], [b]) => new Date(a) - new Date(b))
+        .map(([key, vals]) => {
+          const label = new Date(key).toLocaleDateString("default", {
+            month: "short",
+            day: "numeric",
+          });
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+          return { label, avg: Number(avg.toFixed(2)) };
+        });
+    }
+
     fetchData();
   }, []);
 
@@ -178,7 +199,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-     fontSize: 20,
+    fontSize: 20,
     fontWeight: "bold",
     marginBottom: 12,
     textAlign: "center",
