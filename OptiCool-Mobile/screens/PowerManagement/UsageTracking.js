@@ -499,8 +499,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    height: Dimensions.get("window").height,
+    backgroundColor: "#f5f5f5",
+    minHeight: 600,
   },
   dateBox: {
     borderWidth: 1,

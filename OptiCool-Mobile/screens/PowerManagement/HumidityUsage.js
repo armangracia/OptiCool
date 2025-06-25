@@ -24,6 +24,15 @@ const HumidityUsage = () => {
   const [humidityData, setHumidityData] = useState([]);
   const [outsideHumidityData, setOutsideHumidityData] = useState([]);
 
+  const [chartDataInside, setChartDataInside] = useState({
+    labels: [],
+    datasets: [{ data: [] }],
+  });
+  const [chartDataOutside, setChartDataOutside] = useState({
+    labels: [],
+    datasets: [{ data: [] }],
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -39,24 +48,7 @@ const HumidityUsage = () => {
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
   );
-  const outsideTotalPages = Math.ceil(
-    outsideHumidityData.length / outsideItemsPerPage
-  );
-
-  const chartLabels = [
-    "8 AM",
-    "9 AM",
-    "10 AM",
-    "11 AM",
-    "12 PM",
-    "1 PM",
-    "2 PM",
-    "3 PM",
-    "4 PM",
-    "5 PM",
-  ];
-  const dummyInsideHumidity = [65, 67, 68, 70, 72, 71, 69, 66, 64, 62];
-  const dummyOutsideHumidity = [60, 62, 63, 65, 64, 63, 61, 60, 59, 58];
+  const outsideTotalPages = Math.ceil(outsideHumidityData.length / outsideItemsPerPage);
 
   useEffect(() => {
     fetchHumidityData();
@@ -66,9 +58,7 @@ const HumidityUsage = () => {
   const fetchHumidityData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${baseUrl}/inside-humidity/getinsideHumidity`
-      );
+      const response = await axios.get(`${baseUrl}/inside-humidity/getinsideHumidity`);
       setHumidityData(response.data);
       setCurrentPage(1);
     } catch (err) {
@@ -81,9 +71,7 @@ const HumidityUsage = () => {
 
   const fetchOutsideHumidityData = async () => {
     try {
-      const response = await axios.get(
-        `${baseUrl}/outside-humidity/getoutsideHumidity`
-      );
+      const response = await axios.get(`${baseUrl}/outside-humidity/getoutsideHumidity`);
       setOutsideHumidityData(response.data);
       setOutsidePage(1);
     } catch (err) {
@@ -97,24 +85,46 @@ const HumidityUsage = () => {
     try {
       const [insideRes, outsideRes] = await Promise.all([
         axios.get(`${baseUrl}/inside-humidity/range`, {
-          params: {
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-          },
+          params: { start: startDate.toISOString(), end: endDate.toISOString() },
         }),
         axios.get(`${baseUrl}/outside-humidity/range`, {
-          params: {
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-          },
+          params: { start: startDate.toISOString(), end: endDate.toISOString() },
         }),
       ]);
-      setHumidityData(insideRes.data);
-      setOutsideHumidityData(outsideRes.data);
-      setCurrentPage(1);
-      setOutsidePage(1);
+
+      const groupByDayAverage = (data) => {
+        const grouped = {};
+        data.forEach((entry) => {
+          const dateKey = new Date(entry.timestamp).toISOString().slice(0, 10);
+          if (!grouped[dateKey]) grouped[dateKey] = [];
+          grouped[dateKey].push(entry.humidity);
+        });
+
+        return Object.entries(grouped)
+          .sort(([a], [b]) => new Date(a) - new Date(b))
+          .map(([dateKey, values]) => ({
+            label: new Date(dateKey).toLocaleDateString("default", {
+              month: "short",
+              day: "numeric",
+            }),
+            avg: values.reduce((a, b) => a + b, 0) / values.length,
+          }));
+      };
+
+      const insideGrouped = groupByDayAverage(insideRes.data);
+      const outsideGrouped = groupByDayAverage(outsideRes.data);
+
+      setChartDataInside({
+        labels: insideGrouped.map((row) => row.label),
+        datasets: [{ data: insideGrouped.map((row) => row.avg) }],
+      });
+
+      setChartDataOutside({
+        labels: outsideGrouped.map((row) => row.label),
+        datasets: [{ data: outsideGrouped.map((row) => row.avg) }],
+      });
     } catch (err) {
-      Alert.alert("Error", "Failed to fetch data by range");
+      Alert.alert("Error", "Failed to fetch humidity data by range");
       console.error(err);
     } finally {
       setLoading(false);
@@ -178,28 +188,25 @@ const HumidityUsage = () => {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
-          {/* Inside Humidity Section */}
           <Text style={styles.subHeader}>Inside Humidity</Text>
-          <BarChart
-            data={{
-              labels: chartLabels,
-              datasets: [{ data: dummyInsideHumidity }],
-              legend: ["Humidity"],
-            }}
-            width={Dimensions.get("window").width - 20}
-            height={250}
-            yAxisSuffix="%"
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: () => "#333",
-              decimalPlaces: 1,
-            }}
-            verticalLabelRotation={45}
-            fromZero
-            style={styles.chart}
-          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataInside}
+              width={Math.max(chartDataInside.labels.length * 60, Dimensions.get("window").width)}
+              height={250}
+              yAxisSuffix="%"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+              }}
+              verticalLabelRotation={45}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
 
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Inside Humidity Logs</Text>
@@ -230,9 +237,7 @@ const HumidityUsage = () => {
                 Page {currentPage} of {totalPages}
               </Text>
               <TouchableOpacity
-                onPress={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
+                onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 style={[
                   styles.arrowButton,
@@ -245,26 +250,24 @@ const HumidityUsage = () => {
           </View>
 
           <Text style={styles.subHeader}>Outside Humidity</Text>
-          <BarChart
-            data={{
-              labels: chartLabels,
-              datasets: [{ data: dummyOutsideHumidity }],
-              legend: ["Humidity"],
-            }}
-            width={Dimensions.get("window").width - 20}
-            height={250}
-            yAxisSuffix="%"
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: () => "#333",
-              decimalPlaces: 1,
-            }}
-            verticalLabelRotation={45}
-            fromZero
-            style={styles.chart}
-          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataOutside}
+              width={Math.max(chartDataOutside.labels.length * 60, Dimensions.get("window").width)}
+              height={250}
+              yAxisSuffix="%"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+              }}
+              verticalLabelRotation={45}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
 
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Outside Humidity Logs</Text>
@@ -295,14 +298,11 @@ const HumidityUsage = () => {
                 Page {outsidePage} of {outsideTotalPages}
               </Text>
               <TouchableOpacity
-                onPress={() =>
-                  setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))
-                }
+                onPress={() => setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))}
                 disabled={outsidePage === outsideTotalPages}
                 style={[
                   styles.arrowButton,
-                  outsidePage === outsideTotalPages &&
-                    styles.disabledArrowButton,
+                  outsidePage === outsideTotalPages && styles.disabledArrowButton,
                 ]}
               >
                 <Text style={styles.arrowText}>{">"}</Text>
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 680, 
+    minHeight: 680,
   },
   dateRangeDivider: { alignSelf: "center", marginHorizontal: 10 },
   searchButton: {
