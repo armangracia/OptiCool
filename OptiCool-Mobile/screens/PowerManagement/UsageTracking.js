@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { BarChart } from "react-native-chart-kit";
@@ -17,6 +18,7 @@ import { Picker } from "@react-native-picker/picker";
 import baseUrl from "../../assets/common/baseUrl";
 
 const UsageTracking = () => {
+  const [refreshing, setRefreshing] = useState(false);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [openStartPicker, setOpenStartPicker] = useState(false);
@@ -29,6 +31,7 @@ const UsageTracking = () => {
   const [monthlyUsage, setMonthlyUsage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [powerData, setPowerData] = useState([]);
+  const [dateFilteredData, setDateFilteredData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [selectedYear, setSelectedYear] = useState("All");
   const [selectedMonth, setSelectedMonth] = useState("All");
@@ -44,6 +47,12 @@ const UsageTracking = () => {
   useEffect(() => {
     fetchPowerData();
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchPowerDataByDate(); // ← to refresh with current filters
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     let filtered = powerData;
@@ -133,8 +142,9 @@ const UsageTracking = () => {
         );
       }
 
-      setPowerData(filtered);
-      setFilteredData(filtered);
+      setDateFilteredData(filtered);
+      // setPowerData(filtered);
+      // setFilteredData(filtered);
       setCurrentPage(1);
 
       const grouped = groupByDayAverage(filtered);
@@ -162,14 +172,20 @@ const UsageTracking = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }
+    >
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#000000" />
         </View>
       ) : (
         <>
-          <View style={styles.summaryContainer}>
+          {/* <View style={styles.summaryContainer}>
             <View style={styles.summaryItem}>
               <Text style={styles.icon}>🔌</Text>
               <Text style={styles.label}>Today</Text>
@@ -185,7 +201,7 @@ const UsageTracking = () => {
                 {monthlyUsage ? `${monthlyUsage.toFixed(2)} kWh` : "N/A"}
               </Text>
             </View>
-          </View>
+          </View> */}
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <BarChart
@@ -201,8 +217,7 @@ const UsageTracking = () => {
                 backgroundGradientTo: "#08130D",
                 decimalPlaces: 2,
                 color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-                labelColor: (opacity = 1) =>
-                  `rgba(255, 255, 255, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
                 style: { borderRadius: 16 },
                 propsForDots: {
                   r: "6",
@@ -267,7 +282,9 @@ const UsageTracking = () => {
               marginTop: 40,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
               <Picker
                 selectedValue={selectedYear}
                 onValueChange={(itemValue) => setSelectedYear(itemValue)}
@@ -297,7 +314,9 @@ const UsageTracking = () => {
               </Picker>
             </View>
 
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
               <TextInput
                 style={{
                   borderWidth: 1,
@@ -388,7 +407,6 @@ const UsageTracking = () => {
     </ScrollView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

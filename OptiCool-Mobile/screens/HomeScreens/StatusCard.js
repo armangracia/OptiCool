@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "88%",
     alignSelf: "center",
-    marginTop: 45,
+    marginTop: 35,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 5,

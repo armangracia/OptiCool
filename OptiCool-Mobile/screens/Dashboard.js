@@ -245,13 +245,13 @@ export default function Dashboard() {
             />
           </TouchableOpacity>
         </View>
-        <MaterialCommunityIcons
+        {/* <MaterialCommunityIcons
           name="bell"
           size={24}
           color="#000000"
-          onPress={() => navigation.navigate("NotificationScreen")} // Navigate to NotificationScreen
+          onPress={() => navigation.navigate("NotificationScreen")} 
           style={styles.alertIconContainer}
-        />
+        /> */}
         {/* Dropdown Menu */}
         {isDropdownVisible && (
           <Modal
