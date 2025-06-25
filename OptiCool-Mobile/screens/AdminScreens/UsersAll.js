@@ -7,19 +7,20 @@ import {
   IconButton,
   BottomNavigation,
 } from "react-native-paper";
+import Icon from "react-native-vector-icons/FontAwesome";
 import axios from "axios";
-import baseURL from "../../assets/common/baseUrl";
 import { useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
+import baseURL from "../../assets/common/baseUrl";
 import logActivity from "../../assets/common/logActivity";
 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#f9f9f9",
-    flex: 1,
+    backgroundColor: "white",
   },
   title: {
+    marginTop: 30,
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 16,
@@ -28,7 +29,6 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 12,
     borderRadius: 10,
-    elevation: 2,
   },
   cardContent: {
     padding: 16,
@@ -47,11 +47,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     gap: 6,
   },
-  pagination: {
+  paginationFixed: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 16,
-    paddingHorizontal: 10,
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: "#f9f9f9",
+    borderTopWidth: 1,
+    borderColor: "#ddd",
   },
 });
 
@@ -59,13 +63,10 @@ const UsersRoute = ({
   users,
   page,
   itemsPerPage,
-  onItemsPerPageChange,
-  numberOfItemsPerPageList,
   handleUpdateRole,
   handleDelete,
   setPage,
 }) => {
-  cons;
   const paginatedUsers = users.slice(
     page * itemsPerPage,
     (page + 1) * itemsPerPage
@@ -73,37 +74,38 @@ const UsersRoute = ({
   const totalPages = Math.ceil(users.length / itemsPerPage);
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Users</Text>
-      {paginatedUsers.map((user) => (
-        <Card key={user._id} style={styles.card}>
-          <Card.Content style={styles.cardContent}>
-            <Text style={styles.label}>Name:</Text>
-            <Text style={styles.value}>{user.username}</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>Users</Text>
+        {paginatedUsers.map((user) => (
+          <Card key={user._id} style={styles.card}>
+            <Card.Content style={styles.cardContent}>
+              <Text style={styles.label}>Name:</Text>
+              <Text style={styles.value}>{user.username}</Text>
+              <Text style={styles.label}>Email:</Text>
+              <Text style={styles.value}>{user.email}</Text>
+              <Text style={styles.label}>Role:</Text>
+              <Text style={styles.value}>{user.role}</Text>
 
-            <Text style={styles.label}>Email:</Text>
-            <Text style={styles.value}>{user.email}</Text>
+              <View style={styles.actions}>
+                <IconButton
+                  icon="pencil"
+                  iconColor="#000"
+                  onPress={() => handleUpdateRole(user._id)}
+                />
+                <IconButton
+                  icon="trash-can"
+                  iconColor="red"
+                  onPress={() => handleDelete(user._id)}
+                />
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+      </ScrollView>
 
-            <Text style={styles.label}>Role:</Text>
-            <Text style={styles.value}>{user.role}</Text>
-
-            <View style={styles.actions}>
-              <IconButton
-                icon="account-edit"
-                onPress={() => handleUpdateRole(user._id)}
-              />
-              <IconButton
-                icon="delete"
-                iconColor="red"
-                onPress={() => handleDelete(user._id)}
-              />
-            </View>
-          </Card.Content>
-        </Card>
-      ))}
-
-      {/* Pagination Controls */}
-      <View style={styles.pagination}>
+      {/* Pagination always visible */}
+      <View style={styles.paginationFixed}>
         <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
           Previous
         </Button>
@@ -117,58 +119,87 @@ const UsersRoute = ({
           Next
         </Button>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
-const PendingUsersRoute = ({ pendingUsers, approveUser }) => (
-  <ScrollView style={styles.container}>
-    <Text style={styles.title}>Pending Users</Text>
-    {pendingUsers.map((user) => (
-      <Card key={user._id} style={styles.card}>
-        <Card.Content style={styles.cardContent}>
-          <Text style={styles.label}>Name:</Text>
-          <Text style={styles.value}>{user.username}</Text>
+const PendingUsersRoute = ({
+  pendingUsers,
+  page,
+  itemsPerPage,
+  setPage,
+  approveUser,
+}) => {
+  const paginatedPending = pendingUsers.slice(
+    page * itemsPerPage,
+    (page + 1) * itemsPerPage
+  );
+  const totalPages = Math.ceil(pendingUsers.length / itemsPerPage);
 
-          <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{user.email}</Text>
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>Pending Users</Text>
+        {paginatedPending.map((user) => (
+          <Card key={user._id} style={styles.card}>
+            <Card.Content style={styles.cardContent}>
+              <Text style={styles.label}>Name:</Text>
+              <Text style={styles.value}>{user.username}</Text>
+              <Text style={styles.label}>Email:</Text>
+              <Text style={styles.value}>{user.email}</Text>
 
-          <View style={styles.actions}>
-            <Button
-              mode="contained"
-              buttonColor="#4caf50"
-              textColor="white"
-              onPress={() => approveUser(user._id, true)}
-            >
-              Approve
-            </Button>
-            <Button
-              mode="outlined"
-              textColor="red"
-              onPress={() => approveUser(user._id, false)}
-            >
-              Decline
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
-    ))}
-  </ScrollView>
-);
+              <View style={styles.actions}>
+                <Button
+                  mode="contained"
+                  buttonColor="#4caf50"
+                  textColor="white"
+                  onPress={() => approveUser(user._id, true)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  mode="outlined"
+                  textColor="red"
+                  onPress={() => approveUser(user._id, false)}
+                >
+                  Decline
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+      </ScrollView>
+
+      <View style={styles.paginationFixed}>
+        <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
+          Previous
+        </Button>
+        <Text>
+          Page {page + 1} of {totalPages}
+        </Text>
+        <Button
+          disabled={page + 1 >= totalPages}
+          onPress={() => setPage(page + 1)}
+        >
+          Next
+        </Button>
+      </View>
+    </View>
+  );
+};
 
 export default function UsersAll() {
   const [users, setUsers] = useState([]);
+  const [pagePending, setPagePending] = useState(0); // for pending users
   const [pendingUsers, setPendingUsers] = useState([]);
   const [page, setPage] = useState(0);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
-  const [itemsPerPage, onItemsPerPageChange] = useState(
-    numberOfItemsPerPageList[0]
-  );
-
+  const [itemsPerPage] = useState(numberOfItemsPerPageList[0]);
   const [index, setIndex] = useState(0);
+
   const [routes] = useState([
-    { key: "users", title: "Users", icon: "account-group" },
-    { key: "pending", title: "Pending", icon: "account-clock" },
+    { key: "users", icon: "users" },
+    { key: "pending", icon: "clock-o" },
   ]);
 
   const { token, user } = useSelector((state) => state.auth);
@@ -284,8 +315,6 @@ export default function UsersAll() {
         users={users}
         page={page}
         itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={onItemsPerPageChange}
-        numberOfItemsPerPageList={numberOfItemsPerPageList}
         handleUpdateRole={handleUpdateRole}
         handleDelete={handleDelete}
         setPage={setPage}
@@ -294,6 +323,9 @@ export default function UsersAll() {
     pending: () => (
       <PendingUsersRoute
         pendingUsers={pendingUsers}
+        page={pagePending}
+        itemsPerPage={itemsPerPage}
+        setPage={setPagePending}
         approveUser={approveUser}
       />
     ),
@@ -304,14 +336,18 @@ export default function UsersAll() {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
+      labeled={false}
+      shifting={true}
+      activeColor="black"
+      inactiveColor="white"
       barStyle={{
-        backgroundColor: "#2d3e50",
-        height: 60,
+        backgroundColor: "#121212",
+        height: 68,
         elevation: 8,
       }}
-      activeColor="#00e4f9"
-      inactiveColor="#aaa"
-      shifting={false}
+      renderIcon={({ route, color }) => (
+        <Icon name={route.icon} size={24} color={color} />
+      )}
     />
   );
 }
