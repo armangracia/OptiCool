@@ -9,6 +9,8 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import baseUrl from "../../assets/common/baseUrl";
 
 const ElectricityUsage = () => {
   const [activeTab, setActiveTab] = useState("weekly");
@@ -22,21 +24,60 @@ const ElectricityUsage = () => {
 
   const fetchUsageData = async () => {
     try {
-      const timeLabels = [
-        "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
-        "1 PM", "2 PM", "3 PM", "4 PM", "5 PM",
-        "6 PM", "7 PM", "8 PM",
-      ];
+      const res = await axios.get(`${baseUrl}/power-consumption/getpowerconsumption`);
+      const rawData = Array.isArray(res.data) ? res.data : res.data?.data || [];
 
-      setWeeklyData({
-        labels: timeLabels,
-        values: [],
+      const now = new Date();
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      // Weekly: Last 7 days
+      const last7Days = rawData.filter((entry) => {
+        const date = new Date(entry.timestamp);
+        return now - date <= 7 * oneDay;
       });
 
-      setMonthlyData({
-        labels: timeLabels,
-        values: [],
+      const weeklyMap = {};
+      last7Days.forEach((entry) => {
+        const key = new Date(entry.timestamp).toISOString().slice(0, 10);
+        if (!weeklyMap[key]) weeklyMap[key] = [];
+        weeklyMap[key].push(Number(entry.consumption));
       });
+
+      const weeklyLabels = [];
+      const weeklyValues = [];
+      Object.entries(weeklyMap)
+        .sort(([a], [b]) => new Date(a) - new Date(b))
+        .forEach(([key, values]) => {
+          weeklyLabels.push(new Date(key).toLocaleDateString("default", { month: "short", day: "numeric" }));
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          weeklyValues.push(Number(avg.toFixed(2)));
+        });
+
+      // Monthly: Last 30 days
+      const last30Days = rawData.filter((entry) => {
+        const date = new Date(entry.timestamp);
+        return now - date <= 30 * oneDay;
+      });
+
+      const monthlyMap = {};
+      last30Days.forEach((entry) => {
+        const key = new Date(entry.timestamp).toISOString().slice(0, 10);
+        if (!monthlyMap[key]) monthlyMap[key] = [];
+        monthlyMap[key].push(Number(entry.consumption));
+      });
+
+      const monthlyLabels = [];
+      const monthlyValues = [];
+      Object.entries(monthlyMap)
+        .sort(([a], [b]) => new Date(a) - new Date(b))
+        .forEach(([key, values]) => {
+          monthlyLabels.push(new Date(key).toLocaleDateString("default", { month: "short", day: "numeric" }));
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          monthlyValues.push(Number(avg.toFixed(2)));
+        });
+
+      setWeeklyData({ labels: weeklyLabels, values: weeklyValues });
+      setMonthlyData({ labels: monthlyLabels, values: monthlyValues });
     } catch (error) {
       console.error("Error fetching usage data:", error);
     }
@@ -133,7 +174,7 @@ const ElectricityUsage = () => {
                   activeTab === "weekly" && styles.activeTabButtonText,
                 ]}
               >
-                Weekly
+                Recent
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -149,7 +190,7 @@ const ElectricityUsage = () => {
                   activeTab === "monthly" && styles.activeTabButtonText,
                 ]}
               >
-                Monthly
+                This Month
               </Text>
             </TouchableOpacity>
           </View>
