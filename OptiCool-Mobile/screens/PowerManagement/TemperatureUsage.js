@@ -15,6 +15,8 @@ import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import axios from "axios";
 import baseUrl from "../../assets/common/baseUrl";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 const TemperatureUsage = () => {
   const [startDate, setStartDate] = useState(new Date());
@@ -30,6 +32,26 @@ const TemperatureUsage = () => {
   const [insideData, setInsideData] = useState([]);
   const [outsideData, setOutsideData] = useState([]);
 
+  const [chartRangeInsideData, setChartRangeInsideData] = useState([]);
+  const [chartRangeOutsideData, setChartRangeOutsideData] = useState([]);
+
+  const filterByYearMonth = (data, year, month) => {
+    return data.filter((item) => {
+      const date = new Date(item.timestamp);
+      const yearMatch =
+        year === "All" || date.getFullYear().toString() === year;
+      const monthMatch =
+        month === "All" || date.getMonth().toString() === month;
+      return yearMatch && monthMatch;
+    });
+  };
+
+  const filteredOutsideData = filterByYearMonth(
+    outsideData,
+    selectedYearOutside,
+    selectedMonthOutside
+  );
+
   const [chartDataInside, setChartDataInside] = useState({
     labels: [],
     datasets: [{ data: [] }],
@@ -43,17 +65,6 @@ const TemperatureUsage = () => {
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
-  const filterByYearMonth = (data, year, month) => {
-    return data.filter((item) => {
-      const date = new Date(item.timestamp);
-      const yearMatch =
-        year === "All" || date.getFullYear().toString() === year;
-      const monthMatch =
-        month === "All" || date.getMonth().toString() === month;
-      return yearMatch && monthMatch;
-    });
-  };
 
   const filteredInside = filterByYearMonth(
     insideData,
@@ -81,6 +92,11 @@ const TemperatureUsage = () => {
     outsideIndexOfLastItem
   );
 
+  const filteredInsideData = filterByYearMonth(
+    insideData,
+    selectedYear,
+    selectedMonth
+  );
   const groupByDayAverage = (data) => {
     const grouped = {};
     data.forEach((entry) => {
@@ -110,6 +126,18 @@ const TemperatureUsage = () => {
         ]);
         setInsideData(insideRes.data);
         setOutsideData(outsideRes.data);
+
+        // Initial chart setup with all data (optional)
+        const insideGrouped = groupByDayAverage(insideRes.data);
+        const outsideGrouped = groupByDayAverage(outsideRes.data);
+        setChartDataInside({
+          labels: insideGrouped.map((row) => row.label),
+          datasets: [{ data: insideGrouped.map((row) => row.avg) }],
+        });
+        setChartDataOutside({
+          labels: outsideGrouped.map((row) => row.label),
+          datasets: [{ data: outsideGrouped.map((row) => row.avg) }],
+        });
       } catch (err) {
         console.error(err);
         Alert.alert("Error", "Failed to fetch temperature data");
@@ -137,10 +165,9 @@ const TemperatureUsage = () => {
         }),
       ]);
 
-      setInsideData(insideRes.data);
-      setOutsideData(outsideRes.data);
-      setCurrentPage(1);
-      setOutsidePage(1);
+      // Do not replace main data — keep them for the tables
+      setChartRangeInsideData(insideRes.data);
+      setChartRangeOutsideData(outsideRes.data);
 
       const insideGrouped = groupByDayAverage(insideRes.data);
       const outsideGrouped = groupByDayAverage(outsideRes.data);
@@ -158,6 +185,93 @@ const TemperatureUsage = () => {
       Alert.alert("Error", "Failed to fetch temperature data by range");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadTemperaturePDF = async (
+    insideData,
+    outsideData,
+    selectedYear,
+    selectedMonth
+  ) => {
+    const monthLabel =
+      selectedMonth !== "All"
+        ? new Date(0, selectedMonth).toLocaleString("default", {
+            month: "long",
+          })
+        : "All";
+
+    const generateTableRows = (data) =>
+      data
+        .map(
+          (item) => `
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 8px;">${
+          item.temperature
+        }</td>
+        <td style="border: 1px solid #ccc; padding: 8px;">
+          ${new Date(item.timestamp).toLocaleString()}
+        </td>
+      </tr>`
+        )
+        .join("");
+
+    const html = `
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section-title { margin-top: 30px; font-size: 18px; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>Temperature Usage Report</h1>
+      <p><strong>Year:</strong> ${selectedYear} &nbsp;&nbsp; <strong>Month:</strong> ${monthLabel}</p>
+
+      <div class="section-title">Inside Temperature</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Temperature (°C)</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${generateTableRows(insideData)}
+        </tbody>
+      </table>
+
+      <div class="section-title">Outside Temperature</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Temperature (°C)</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${generateTableRows(outsideData)}
+        </tbody>
+      </table>
+    </body>
+  </html>
+`;
+
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert("Sharing not available on this device");
+      }
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      Alert.alert("Error", "Failed to generate or share the PDF");
     }
   };
 
@@ -338,7 +452,7 @@ const TemperatureUsage = () => {
                 keyboardType="numeric"
                 value={pageInput}
                 onChangeText={(text) => setPageInput(text)}
-                onBlur={() => setPageInput("")} // optional: clear after use
+                // onBlur={() => setPageInput("")} // optional: clear after use
               />
               <TouchableOpacity
                 onPress={() => {
@@ -477,7 +591,6 @@ const TemperatureUsage = () => {
                 keyboardType="numeric"
                 value={pageInputOutside}
                 onChangeText={(text) => setPageInputOutside(text)}
-                onBlur={() => setPageInputOutside("")} 
               />
               <TouchableOpacity
                 onPress={() => {
@@ -544,6 +657,27 @@ const TemperatureUsage = () => {
                 <Text style={styles.arrowText}>{">"}</Text>
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              onPress={() =>
+                downloadTemperaturePDF(
+                  filteredInsideData,
+                  filteredOutsideData,
+                  selectedYear,
+                  selectedMonth
+                )
+              }
+              style={{
+                backgroundColor: "#000",
+                padding: 12,
+                borderRadius: 8,
+                alignItems: "center",
+                marginVertical: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                Download PDF
+              </Text>
+            </TouchableOpacity>
           </View>
         </>
       )}

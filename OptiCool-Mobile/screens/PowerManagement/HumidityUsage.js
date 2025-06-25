@@ -323,15 +323,15 @@ const HumidityUsage = () => {
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`, // gradient blue
+                color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`, 
                 labelColor: () => "#333",
                 decimalPlaces: 1,
-                fillShadowGradientFrom: "#4facfe", // light blue
-                fillShadowGradientTo: "#00f2fe", // cyan blue
+                fillShadowGradientFrom: "#4facfe", 
+                fillShadowGradientTo: "#00f2fe", 
                 fillShadowGradientOpacity: 1,
                 barPercentage: 0.6,
               }}
-              verticalLabelRotation={0} // horizontal labels
+              verticalLabelRotation={0} 
               fromZero
               style={styles.chart}
             />
@@ -350,15 +350,15 @@ const HumidityUsage = () => {
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, // gradient orange
+                color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, 
                 labelColor: () => "#333",
                 decimalPlaces: 1,
-                fillShadowGradientFrom: "#f7971e", // light orange
-                fillShadowGradientTo: "#ffd200", // yellow orange
+                fillShadowGradientFrom: "#f7971e", 
+                fillShadowGradientTo: "#ffd200",
                 fillShadowGradientOpacity: 1,
                 barPercentage: 0.6,
               }}
-              verticalLabelRotation={0} // horizontal labels
+              verticalLabelRotation={0} 
               fromZero
               style={styles.chart}
             />
