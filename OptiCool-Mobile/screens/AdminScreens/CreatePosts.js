@@ -1,12 +1,21 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
-import baseURL from '../../assets/common/baseUrl';
-
+import baseURL from "../../assets/common/baseUrl";
+import { useSelector } from "react-redux";
+import logActivity from "../../assets/common/logActivity";
 
 const CreatePosts = ({ navigation }) => {
+  const { user, token } = useSelector((state) => state.auth);
   const initialValues = {
     title: "",
     content: "",
@@ -21,6 +30,11 @@ const CreatePosts = ({ navigation }) => {
     try {
       const response = await axios.post(`${baseURL}/posts/createPosts`, values);
       if (response.status === 201) {
+        await logActivity({
+          userId: user._id,
+          action: `Created a new post titled "${values.title}"`,
+          token,
+        });
         Alert.alert("Success", "Post created successfully!");
         resetForm();
         navigation.goBack(); // Navigate back to the posts list
@@ -39,7 +53,14 @@ const CreatePosts = ({ navigation }) => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+        {({
+          handleChange,
+          handleBlur,
+          handleSubmit,
+          values,
+          errors,
+          touched,
+        }) => (
           <View style={styles.form}>
             <TextInput
               style={styles.input}

@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
-import * as ImagePicker from 'expo-image-picker';
-import baseURL from '../../assets/common/baseUrl';
+import * as ImagePicker from "expo-image-picker";
+import baseURL from "../../assets/common/baseUrl";
+import { useSelector } from "react-redux";
+import logActivity from "../../assets/common/logActivity";
 
 const EditPosts = ({ route, navigation }) => {
+  const { user, token } = useSelector((state) => state.auth);
   const { postId } = route.params;
   const [post, setPost] = useState(null);
   const [image, setImage] = useState(null);
@@ -14,7 +25,9 @@ const EditPosts = ({ route, navigation }) => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const response = await axios.get(`${baseURL}/posts/getPostById/${postId}`);
+        const response = await axios.get(
+          `${baseURL}/posts/getPostById/${postId}`
+        );
         if (response.status === 200) {
           setPost(response.data.post);
           setImage(response.data.post.image);
@@ -56,7 +69,7 @@ const EditPosts = ({ route, navigation }) => {
     formData.append("title", values.title);
     formData.append("content", values.content);
     if (image) {
-      const filename = image.split('/').pop();
+      const filename = image.split("/").pop();
       const match = /\.(\w+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : `image`;
 
@@ -68,12 +81,22 @@ const EditPosts = ({ route, navigation }) => {
     }
 
     try {
-      const response = await axios.put(`${baseURL}/posts/updatePost/${postId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.put(
+        `${baseURL}/posts/updatePost/${postId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       if (response.status === 200) {
+        await logActivity({
+          userId: user._id,
+          action: `Updated post with ID: ${postId}`,
+          token,
+        });
+
         Alert.alert("Success", "Post updated successfully!");
         navigation.goBack(); // Navigate back to the posts list
       }
@@ -96,7 +119,14 @@ const EditPosts = ({ route, navigation }) => {
         onSubmit={handleSubmit}
         enableReinitialize
       >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+        {({
+          handleChange,
+          handleBlur,
+          handleSubmit,
+          values,
+          errors,
+          touched,
+        }) => (
           <View style={styles.form}>
             <TextInput
               style={styles.input}
