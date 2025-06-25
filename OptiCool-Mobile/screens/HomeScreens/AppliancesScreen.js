@@ -2,8 +2,11 @@ import React from "react";
 import { View, Text, Switch, StyleSheet, Image, Alert } from "react-native";
 import dmt3API from "../../services/dmt3API";
 import { ActivityIndicator } from "react-native-paper";
+import logActivity from "../../assets/common/logActivity";
+import { useSelector } from "react-redux";
 
 const AppliancesScreen = () => {
+  const { user, token } = useSelector((state) => state.auth);
   const [isLightOn, setLightOn] = React.useState(false);
   const [isFanOn, setFanOn] = React.useState(false);
   const [isExhaustInwardsOn, setExhaustInwardsOn] = React.useState(false);
@@ -30,82 +33,110 @@ const AppliancesScreen = () => {
     tintColor: isOn ? "#fff" : "#000",
   });
 
-
   const resetAll = () => {
-    setFanOn(false)
-    setExhaustInwardsOn(false)
-    setExhaustOutwardsOn(false)
-    setLightOn(false)
-  }
+    setFanOn(false);
+    setExhaustInwardsOn(false);
+    setExhaustOutwardsOn(false);
+    setLightOn(false);
+  };
 
   const handleAC = async (status) => {
-    setLoading(true)
+    setLoading(true);
     try {
-
       if (status) {
         await dmt3API.turnOnAllAC();
       } else {
         await dmt3API.turnOffAllAC();
       }
 
+      
+      await logActivity({
+        userId: user._id,
+        action: `Turned ${status ? "on" : "off"} Aircon`,
+        token,
+      });
     } catch (err) {
-      Alert.alert("No running system", "Not connected to the system")
+      Alert.alert("No running system", "Not connected to the system");
       console.log(err);
-      resetAll()
+      resetAll();
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const handleFans = async (status) => {
-    setLoading(true)
+    setLoading(true);
     try {
       if (status) {
         await dmt3API.turnOnEFans();
       } else {
         await dmt3API.turnOffEFans();
       }
+
+        // 🔥 Log activity here
+    await logActivity({
+      userId: user._id,
+      action: `Turned ${status ? "on" : "off"} Fans`,
+      token,
+    });
+
     } catch (err) {
-      Alert.alert("No running system", "Not connected to the system")
+      Alert.alert("No running system", "Not connected to the system");
       console.log(err);
-      resetAll()
+      resetAll();
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const handleBlower = async (status) => {
-    setLoading(true)
+    setLoading(true);
     try {
       if (status) {
         await dmt3API.turnOnBlower();
       } else {
         await dmt3API.turnOffBlower();
       }
+
+       
+    await logActivity({
+      userId: user._id,
+      action: `Turned ${status ? "on" : "off"} Blower`,
+      token,
+    });
+
     } catch (err) {
-      Alert.alert("No running system", "Not connected to the system")
+      Alert.alert("No running system", "Not connected to the system");
       console.log(err);
-      resetAll()
+      resetAll();
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const handleExhaust = async (status) => {
-    setLoading(true)
+    setLoading(true);
     try {
       if (status) {
         await dmt3API.turnOnExhaust();
       } else {
         await dmt3API.turnOffExhaust();
       }
+
+        // 🔥 Log activity here
+    await logActivity({
+      userId: user._id,
+      action: `Turned ${status ? "on" : "off"} Exhaust`,
+      token,
+    });
+
     } catch (err) {
       console.log(err);
-      Alert.alert("No running system", "Not connected to the system")
-      resetAll()
+      Alert.alert("No running system", "Not connected to the system");
+      resetAll();
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   return (
-    <View style={[styles.container]} pointerEvents={loading ? 'none' : 'auto'}>
+    <View style={[styles.container]} pointerEvents={loading ? "none" : "auto"}>
       <View style={styles.row}>
         <View style={getCardStyle(isLightOn)}>
           <Image
@@ -117,8 +148,8 @@ const AppliancesScreen = () => {
             <Switch
               value={isLightOn}
               onValueChange={(value) => {
-                setLightOn((prev) => !prev)
-                handleAC(value)
+                setLightOn((prev) => !prev);
+                handleAC(value);
               }}
               style={styles.switch}
             />
@@ -135,7 +166,7 @@ const AppliancesScreen = () => {
             <Switch
               value={isFanOn}
               onValueChange={(value) => {
-                setFanOn((prev) => !prev)
+                setFanOn((prev) => !prev);
                 handleFans(value);
               }}
               style={styles.switch}
@@ -151,14 +182,19 @@ const AppliancesScreen = () => {
             style={getImageStyle(isExhaustInwardsOn)}
           />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={[getSmallTextStyle(isExhaustInwardsOn), { marginLeft: 10 }]}>
+            <Text
+              style={[
+                getSmallTextStyle(isExhaustInwardsOn),
+                { marginLeft: 10 },
+              ]}
+            >
               Exhaust{"\n"}(Inwards)
             </Text>
             <Switch
               value={isExhaustInwardsOn}
               onValueChange={(value) => {
-                setExhaustInwardsOn((prev) => !prev)
-                handleBlower(value)
+                setExhaustInwardsOn((prev) => !prev);
+                handleBlower(value);
               }}
               style={styles.switch}
             />
@@ -171,25 +207,32 @@ const AppliancesScreen = () => {
             style={getImageStyle(isExhaustOutwardsOn)}
           />
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={[getSmallTextStyle(isExhaustOutwardsOn), { marginLeft: 10 }]}>
+            <Text
+              style={[
+                getSmallTextStyle(isExhaustOutwardsOn),
+                { marginLeft: 10 },
+              ]}
+            >
               Exhaust{"\n"}(Outwards)
             </Text>
             <Switch
               value={isExhaustOutwardsOn}
               onValueChange={(value) => {
-                setExhaustOutwardsOn((prev) => !prev)
-                handleExhaust(value)
+                setExhaustOutwardsOn((prev) => !prev);
+                handleExhaust(value);
               }}
               style={styles.switch}
             />
           </View>
         </View>
       </View>
-      <View style={{
-        position: 'absolute',
-        top: '50%',
-      }}>
-        <ActivityIndicator animating={loading} size={'large'} />
+      <View
+        style={{
+          position: "absolute",
+          top: "50%",
+        }}
+      >
+        <ActivityIndicator animating={loading} size={"large"} />
       </View>
     </View>
   );
