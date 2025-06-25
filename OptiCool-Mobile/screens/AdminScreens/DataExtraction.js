@@ -11,10 +11,13 @@ import {
 import dmt3API from "../../services/dmt3API";
 import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
+import { useSelector } from "react-redux";
+import logActivity from "../../assets/common/logActivity";
 
 const DataExtraction = () => {
   const startDate = "2024-08-01";
   const today = new Date().toISOString().split("T")[0];
+  const { user, token } = useSelector((state) => state.auth);
 
   const handlePowerData = async () => {
     try {
@@ -25,6 +28,13 @@ const DataExtraction = () => {
         consumption: entry.consumption,
       }));
       await axios.post(`${baseURL}/save/data`, { power: formattedData });
+
+      await logActivity({
+        userId: user._id,
+        action: "Extracted Power Consumption data",
+        token,
+      });
+
       Alert.alert("Success", "Power data fetched and saved.");
     } catch (error) {
       console.error("Power data error:", error.message);
@@ -43,6 +53,13 @@ const DataExtraction = () => {
       await axios.post(`${baseURL}/save/inside-humidity`, {
         insideHumidity: formattedData,
       });
+
+      await logActivity({
+        userId: user._id,
+        action: "Extracted Inside Humidity data",
+        token,
+      });
+
       Alert.alert("Success", "Inside humidity data saved.");
     } catch (error) {
       console.error("Inside humidity error:", error.message);
@@ -61,6 +78,13 @@ const DataExtraction = () => {
       await axios.post(`${baseURL}/save/outside-humidity`, {
         outsideHumidity: formattedData,
       });
+
+      await logActivity({
+        userId: user._id,
+        action: "Extracted Outside Humidity data",
+        token,
+      });
+
       Alert.alert("Success", "Outside humidity data saved.");
     } catch (error) {
       console.error("Outside humidity error:", error.message);
@@ -79,6 +103,13 @@ const DataExtraction = () => {
       await axios.post(`${baseURL}/save/inside-temperature`, {
         insideTemperature: formattedData,
       });
+
+      await logActivity({
+        userId: user._id,
+        action: "Extracted Inside Temperature data",
+        token,
+      });
+
       Alert.alert("Success", "Inside temperature data saved.");
     } catch (error) {
       console.error("Inside temperature error:", error.message);
@@ -97,6 +128,13 @@ const DataExtraction = () => {
       await axios.post(`${baseURL}/save/outside-temperature`, {
         outsideTemperature: formattedData,
       });
+
+        await logActivity({
+        userId: user._id,
+        action: "Extracted Outside Temperature data",
+        token,
+      });
+      
       Alert.alert("Success", "Outside temperature data saved.");
     } catch (error) {
       console.error("Outside temperature error:", error.message);
