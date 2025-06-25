@@ -6,27 +6,30 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  TextInput,
   Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
 import { BarChart } from "react-native-chart-kit";
 import { Dimensions } from "react-native";
 import axios from "axios";
 import baseUrl from "../../assets/common/baseUrl";
 
 const TemperatureUsage = () => {
-  /* -----------------------------  STATE  ----------------------------- */
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [openStartPicker, setOpenStartPicker] = useState(false);
   const [openEndPicker, setOpenEndPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Raw log arrays
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [pageInput, setPageInput] = useState("");
+
   const [insideData, setInsideData] = useState([]);
   const [outsideData, setOutsideData] = useState([]);
 
-  // Chart datasets (computed after each range search)
   const [chartDataInside, setChartDataInside] = useState({
     labels: [],
     datasets: [{ data: [] }],
@@ -36,25 +39,48 @@ const TemperatureUsage = () => {
     datasets: [{ data: [] }],
   });
 
-  // Pagination (inside)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentInside = insideData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(insideData.length / itemsPerPage);
 
-  // Pagination (outside)
+  const filterByYearMonth = (data, year, month) => {
+    return data.filter((item) => {
+      const date = new Date(item.timestamp);
+      const yearMatch =
+        year === "All" || date.getFullYear().toString() === year;
+      const monthMatch =
+        month === "All" || date.getMonth().toString() === month;
+      return yearMatch && monthMatch;
+    });
+  };
+
+  const filteredInside = filterByYearMonth(
+    insideData,
+    selectedYear,
+    selectedMonth
+  );
+  const totalPages = Math.ceil(filteredInside.length / itemsPerPage);
+  const currentInside = filteredInside.slice(indexOfFirstItem, indexOfLastItem);
+
   const [outsidePage, setOutsidePage] = useState(1);
+  const [selectedYearOutside, setSelectedYearOutside] = useState("All");
+  const [selectedMonthOutside, setSelectedMonthOutside] = useState("All");
+  const [pageInputOutside, setPageInputOutside] = useState(" ");
   const outsideIndexOfLastItem = outsidePage * itemsPerPage;
   const outsideIndexOfFirstItem = outsideIndexOfLastItem - itemsPerPage;
-  const currentOutside = outsideData.slice(
+
+  const filteredOutside = filterByYearMonth(
+    outsideData,
+    selectedYearOutside,
+    selectedMonthOutside
+  );
+  const outsideTotalPages = Math.ceil(filteredOutside.length / itemsPerPage);
+  const currentOutside = filteredOutside.slice(
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
   );
-  const outsideTotalPages = Math.ceil(outsideData.length / itemsPerPage);
 
-  /* -------------------------  HELPERS  ------------------------- */
   const groupByDayAverage = (data) => {
     const grouped = {};
     data.forEach((entry) => {
@@ -74,7 +100,6 @@ const TemperatureUsage = () => {
       }));
   };
 
-  /* ------------------------  INITIAL FETCH  ------------------------ */
   useEffect(() => {
     (async () => {
       try {
@@ -94,26 +119,29 @@ const TemperatureUsage = () => {
     })();
   }, []);
 
-  /* -----------------------  RANGE SEARCH  ----------------------- */
   const fetchByRange = async () => {
     setLoading(true);
     try {
       const [insideRes, outsideRes] = await Promise.all([
         axios.get(`${baseUrl}/inside-temperature/range`, {
-          params: { start: startDate.toISOString(), end: endDate.toISOString() },
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
         }),
         axios.get(`${baseUrl}/outside-temperature/range`, {
-          params: { start: startDate.toISOString(), end: endDate.toISOString() },
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
         }),
       ]);
 
-      // Raw logs (tables)
       setInsideData(insideRes.data);
       setOutsideData(outsideRes.data);
       setCurrentPage(1);
       setOutsidePage(1);
 
-      // Charts
       const insideGrouped = groupByDayAverage(insideRes.data);
       const outsideGrouped = groupByDayAverage(outsideRes.data);
 
@@ -133,7 +161,6 @@ const TemperatureUsage = () => {
     }
   };
 
-  /* ---------------------------  RENDER  --------------------------- */
   return (
     <ScrollView
       contentContainerStyle={styles.container}
@@ -147,7 +174,6 @@ const TemperatureUsage = () => {
         <>
           <Text style={styles.header}>Temperature Report</Text>
 
-          {/* ------------------- INSIDE CHART ------------------- */}
           <Text style={styles.subHeader}>Inside Temperature</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <BarChart
@@ -174,7 +200,6 @@ const TemperatureUsage = () => {
             />
           </ScrollView>
 
-          {/* ------------------ OUTSIDE CHART ------------------ */}
           <Text style={styles.subHeader}>Outside Temperature</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <BarChart
@@ -201,7 +226,6 @@ const TemperatureUsage = () => {
             />
           </ScrollView>
 
-          {/* ------------------ DATE PICKERS ------------------ */}
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               onPress={() => setOpenStartPicker(true)}
@@ -245,7 +269,100 @@ const TemperatureUsage = () => {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
-          {/* ------------------ INSIDE TABLE ------------------ */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 5,
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Picker
+                selectedValue={selectedYear}
+                onValueChange={(itemValue) => setSelectedYear(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 120,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Years" value="All" />
+                <Picker.Item label="2023" value="2023" />
+                <Picker.Item label="2024" value="2024" />
+                <Picker.Item label="2025" value="2025" />
+              </Picker>
+
+              <Picker
+                selectedValue={selectedMonth}
+                onValueChange={(itemValue) => setSelectedMonth(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 120,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Months" value="All" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item
+                    key={i}
+                    label={new Date(0, i).toLocaleString("default", {
+                      month: "short",
+                    })}
+                    // value={i.toString()}
+                    value={`${i}`}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 6,
+                  width: 50,
+                  textAlign: "center",
+                }}
+                keyboardType="numeric"
+                value={pageInput}
+                onChangeText={(text) => setPageInput(text)}
+                onBlur={() => setPageInput("")} // optional: clear after use
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const page = parseInt(pageInput);
+                  if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                    setCurrentPage(page);
+                  } else {
+                    Alert.alert(
+                      "Invalid Page",
+                      `Please enter a number between 1 and ${totalPages}`
+                    );
+                  }
+                }}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: "#000",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Go</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Inside Temperature Logs</Text>
             <View style={styles.tableHeader}>
@@ -275,7 +392,9 @@ const TemperatureUsage = () => {
                 Page {currentPage} of {totalPages}
               </Text>
               <TouchableOpacity
-                onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                onPress={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 style={[
                   styles.arrowButton,
@@ -287,7 +406,102 @@ const TemperatureUsage = () => {
             </View>
           </View>
 
-          {/* ----------------- OUTSIDE TABLE ----------------- */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 5,
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Picker
+                selectedValue={selectedYearOutside}
+                onValueChange={(itemValue) => setSelectedYearOutside(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 120,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Years" value="All" />
+                <Picker.Item label="2023" value="2023" />
+                <Picker.Item label="2024" value="2024" />
+                <Picker.Item label="2025" value="2025" />
+              </Picker>
+
+              <Picker
+                selectedValue={selectedMonthOutside}
+                onValueChange={(itemValue) =>
+                  setSelectedMonthOutside(itemValue)
+                }
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 120,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Months" value="All" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item
+                    key={i}
+                    label={new Date(0, i).toLocaleString("default", {
+                      month: "short",
+                    })}
+                    // value={i.toString()}
+                    value={`${i}`}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 6,
+                  width: 50,
+                  textAlign: "center",
+                }}
+                keyboardType="numeric"
+                value={pageInputOutside}
+                onChangeText={(text) => setPageInputOutside(text)}
+                onBlur={() => setPageInputOutside("")} 
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const page = parseInt(pageInputOutside);
+                  if (!isNaN(page) && page >= 1 && page <= outsideTotalPages) {
+                    setOutsidePage(page);
+                  } else {
+                    Alert.alert(
+                      "Invalid Page",
+                      `Please enter a number between 1 and ${outsideTotalPages}`
+                    );
+                  }
+                }}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: "#000",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Go</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Outside Temperature Logs</Text>
             <View style={styles.tableHeader}>
@@ -337,7 +551,6 @@ const TemperatureUsage = () => {
   );
 };
 
-/* --------------------------  STYLES  -------------------------- */
 const styles = StyleSheet.create({
   container: {
     padding: 10,
