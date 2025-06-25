@@ -15,6 +15,8 @@ import { Picker } from "@react-native-picker/picker";
 import { Dimensions } from "react-native";
 import axios from "axios";
 import baseUrl from "../../assets/common/baseUrl";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 const HumidityUsage = () => {
   const [startDate, setStartDate] = useState(new Date());
@@ -208,6 +210,93 @@ const HumidityUsage = () => {
 
   const handleSearch = () => {
     fetchByRange();
+  };
+
+  const downloadHumidityPDF = async (
+    insideData,
+    outsideData,
+    selectedYear,
+    selectedMonth
+  ) => {
+    const monthLabel =
+      selectedMonth !== "All"
+        ? new Date(0, selectedMonth).toLocaleString("default", {
+            month: "long",
+          })
+        : "All";
+
+    const generateTableRows = (data) =>
+      data
+        .map(
+          (item) => `
+        <tr>
+          <td style="border: 1px solid #ccc; padding: 8px;">${
+            item.humidity
+          }</td>
+          <td style="border: 1px solid #ccc; padding: 8px;">
+            ${new Date(item.timestamp).toLocaleString()}
+          </td>
+        </tr>`
+        )
+        .join("");
+
+    const html = `
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+          th { background-color: #f2f2f2; }
+          .section-title { margin-top: 30px; font-size: 18px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>Humidity Usage Report</h1>
+        <p><strong>Year:</strong> ${selectedYear} &nbsp;&nbsp; <strong>Month:</strong> ${monthLabel}</p>
+
+        <div class="section-title">Inside Humidity</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Humidity (%)</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${generateTableRows(insideData)}
+          </tbody>
+        </table>
+
+        <div class="section-title">Outside Humidity</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Humidity (%)</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${generateTableRows(outsideData)}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+
+    try {
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert("Sharing not available on this device");
+      }
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      Alert.alert("Error", "Failed to generate or share the PDF");
+    }
   };
 
   return (
@@ -517,7 +606,7 @@ const HumidityUsage = () => {
             >
               <TextInput
                 style={{
-                 borderWidth: 1,
+                  borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 6,
                   padding: 6,
@@ -574,13 +663,21 @@ const HumidityUsage = () => {
                 style={[
                   styles.arrowButton,
                   outsidePage === 1 && styles.disabledArrowButton,
+                  {
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    minWidth: 30,
+                    alignItems: "center",
+                  },
                 ]}
               >
-                <Text style={styles.arrowText}>{"<"}</Text>
+                <Text style={{ color: "#fff", fontSize: 14 }}>{"<"}</Text>
               </TouchableOpacity>
+
               <Text style={styles.pageInfoText}>
                 Page {outsidePage} of {outsideTotalPages}
               </Text>
+
               <TouchableOpacity
                 onPress={() =>
                   setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))
@@ -590,11 +687,38 @@ const HumidityUsage = () => {
                   styles.arrowButton,
                   outsidePage === outsideTotalPages &&
                     styles.disabledArrowButton,
+                  {
+                    paddingHorizontal: 8,
+                    paddingVertical: 6,
+                    minWidth: 30,
+                    alignItems: "center",
+                  },
                 ]}
               >
-                <Text style={styles.arrowText}>{">"}</Text>
+                <Text style={{ color: "#fff", fontSize: 14 }}>{">"}</Text>
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+                onPress={() =>
+                  downloadHumidityPDF(
+                    filteredInsideData,
+                    filteredOutsideData,
+                    selectedYear,
+                    selectedMonth
+                  )
+                }
+                style={{
+                  backgroundColor: "#000",
+                  padding: 12,
+                  borderRadius: 8,
+                  alignItems: "center",
+                  marginVertical: 10,
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Download PDF
+                </Text>
+              </TouchableOpacity>
           </View>
         </>
       )}
@@ -689,7 +813,12 @@ const styles = StyleSheet.create({
   },
   disabledArrowButton: { backgroundColor: "#ccc" },
   arrowText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
-  pageInfoText: { fontSize: 14, fontWeight: "bold", color: "#333", marginTop: 6 },
+  pageInfoText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 6,
+  },
 });
 
 export default HumidityUsage;
