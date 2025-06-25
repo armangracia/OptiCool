@@ -1,10 +1,5 @@
 import React, { useCallback, useState } from "react";
-import {
-  View,
-  ScrollView,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import { View, ScrollView, Alert, StyleSheet } from "react-native";
 import {
   Text,
   Card,
@@ -16,6 +11,7 @@ import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
 import { useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
+import logActivity from "../../assets/common/logActivity";
 
 const styles = StyleSheet.create({
   container: {
@@ -69,7 +65,11 @@ const UsersRoute = ({
   handleDelete,
   setPage,
 }) => {
-  const paginatedUsers = users.slice(page * itemsPerPage, (page + 1) * itemsPerPage);
+  cons;
+  const paginatedUsers = users.slice(
+    page * itemsPerPage,
+    (page + 1) * itemsPerPage
+  );
   const totalPages = Math.ceil(users.length / itemsPerPage);
 
   return (
@@ -88,8 +88,15 @@ const UsersRoute = ({
             <Text style={styles.value}>{user.role}</Text>
 
             <View style={styles.actions}>
-              <IconButton icon="account-edit" onPress={() => handleUpdateRole(user._id)} />
-              <IconButton icon="delete" iconColor="red" onPress={() => handleDelete(user._id)} />
+              <IconButton
+                icon="account-edit"
+                onPress={() => handleUpdateRole(user._id)}
+              />
+              <IconButton
+                icon="delete"
+                iconColor="red"
+                onPress={() => handleDelete(user._id)}
+              />
             </View>
           </Card.Content>
         </Card>
@@ -97,17 +104,14 @@ const UsersRoute = ({
 
       {/* Pagination Controls */}
       <View style={styles.pagination}>
-        <Button
-          disabled={page === 0}
-          onPress={() => setPage(page - 1)}
-        >
+        <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
           Previous
         </Button>
         <Text>
           Page {page + 1} of {totalPages}
         </Text>
         <Button
-          disabled={(page + 1) >= totalPages}
+          disabled={page + 1 >= totalPages}
           onPress={() => setPage(page + 1)}
         >
           Next
@@ -157,7 +161,9 @@ export default function UsersAll() {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [page, setPage] = useState(0);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
-  const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
+  const [itemsPerPage, onItemsPerPageChange] = useState(
+    numberOfItemsPerPageList[0]
+  );
 
   const [index, setIndex] = useState(0);
   const [routes] = useState([
@@ -165,7 +171,7 @@ export default function UsersAll() {
     { key: "pending", title: "Pending", icon: "account-clock" },
   ]);
 
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
 
   const fetchUsers = async () => {
     try {
@@ -185,6 +191,13 @@ export default function UsersAll() {
       await axios.delete(`${baseURL}/users/delete/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      await logActivity({
+        userId: user._id,
+        action: `Deleted user with ID: ${id}`,
+        token,
+      });
+
       Alert.alert("Success", "User successfully deleted.");
       fetchUsers();
     } catch (error) {
@@ -200,6 +213,13 @@ export default function UsersAll() {
         { role },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      await logActivity({
+        userId: user._id,
+        action: `Updated user role to '${role}' for user ID: ${id}`,
+        token,
+      });
+
       Alert.alert("Success", "Role updated successfully.");
       fetchUsers();
     } catch (error) {
@@ -215,7 +235,17 @@ export default function UsersAll() {
         { isApproved },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      Alert.alert("Success", `User ${isApproved ? "approved" : "declined"} successfully.`);
+
+      await logActivity({
+        userId: user._id,
+        action: `${isApproved ? "Approved" : "Declined"} user with ID: ${id}`,
+        token,
+      });
+
+      Alert.alert(
+        "Success",
+        `User ${isApproved ? "approved" : "declined"} successfully.`
+      );
       fetchUsers();
     } catch (error) {
       console.error(error);
@@ -224,10 +254,14 @@ export default function UsersAll() {
   };
 
   const handleDelete = (id) => {
-    Alert.alert("Confirm Deletion", "Are you sure you want to delete this user?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Yes", onPress: () => deleteUser(id) },
-    ]);
+    Alert.alert(
+      "Confirm Deletion",
+      "Are you sure you want to delete this user?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", onPress: () => deleteUser(id) },
+      ]
+    );
   };
 
   const handleUpdateRole = (id) => {
@@ -257,7 +291,12 @@ export default function UsersAll() {
         setPage={setPage}
       />
     ),
-    pending: () => <PendingUsersRoute pendingUsers={pendingUsers} approveUser={approveUser} />,
+    pending: () => (
+      <PendingUsersRoute
+        pendingUsers={pendingUsers}
+        approveUser={approveUser}
+      />
+    ),
   });
 
   return (
