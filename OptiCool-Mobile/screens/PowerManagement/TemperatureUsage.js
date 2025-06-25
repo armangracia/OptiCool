@@ -15,15 +15,28 @@ import axios from "axios";
 import baseUrl from "../../assets/common/baseUrl";
 
 const TemperatureUsage = () => {
+  /* -----------------------------  STATE  ----------------------------- */
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [openStartPicker, setOpenStartPicker] = useState(false);
   const [openEndPicker, setOpenEndPicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Raw log arrays
   const [insideData, setInsideData] = useState([]);
   const [outsideData, setOutsideData] = useState([]);
 
+  // Chart datasets (computed after each range search)
+  const [chartDataInside, setChartDataInside] = useState({
+    labels: [],
+    datasets: [{ data: [] }],
+  });
+  const [chartDataOutside, setChartDataOutside] = useState({
+    labels: [],
+    datasets: [{ data: [] }],
+  });
+
+  // Pagination (inside)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -31,111 +44,164 @@ const TemperatureUsage = () => {
   const currentInside = insideData.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(insideData.length / itemsPerPage);
 
+  // Pagination (outside)
   const [outsidePage, setOutsidePage] = useState(1);
-  const outsideItemsPerPage = 20;
-  const outsideIndexOfLastItem = outsidePage * outsideItemsPerPage;
-  const outsideIndexOfFirstItem = outsideIndexOfLastItem - outsideItemsPerPage;
+  const outsideIndexOfLastItem = outsidePage * itemsPerPage;
+  const outsideIndexOfFirstItem = outsideIndexOfLastItem - itemsPerPage;
   const currentOutside = outsideData.slice(
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
   );
-  const outsideTotalPages = Math.ceil(outsideData.length / outsideItemsPerPage);
+  const outsideTotalPages = Math.ceil(outsideData.length / itemsPerPage);
 
-  const chartLabels = [
-    "8 AM",
-    "9 AM",
-    "10 AM",
-    "11 AM",
-    "12 PM",
-    "1 PM",
-    "2 PM",
-    "3 PM",
-    "4 PM",
-    "5 PM",
-  ];
+  /* -------------------------  HELPERS  ------------------------- */
+  const groupByDayAverage = (data) => {
+    const grouped = {};
+    data.forEach((entry) => {
+      const dateKey = new Date(entry.timestamp).toISOString().slice(0, 10);
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(entry.temperature);
+    });
 
-  const dummyInsideTemp = [24, 24.5, 25, 25.5, 26, 26.5, 27, 26.7, 26.2, 25.8];
-  const dummyOutsideTemp = [
-    28, 28.3, 29, 29.5, 30, 30.2, 30.5, 30.1, 29.8, 29.2,
-  ];
+    return Object.entries(grouped)
+      .sort(([a], [b]) => new Date(a) - new Date(b))
+      .map(([dateKey, values]) => ({
+        label: new Date(dateKey).toLocaleDateString("default", {
+          month: "short",
+          day: "numeric",
+        }),
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+      }));
+  };
 
+  /* ------------------------  INITIAL FETCH  ------------------------ */
   useEffect(() => {
-    fetchTemperatureData();
-    fetchOutsideTemperatureData();
+    (async () => {
+      try {
+        setLoading(true);
+        const [insideRes, outsideRes] = await Promise.all([
+          axios.get(`${baseUrl}/inside-temperature/getinsideTemperature`),
+          axios.get(`${baseUrl}/outside-temperature/getoutsideTemperature`),
+        ]);
+        setInsideData(insideRes.data);
+        setOutsideData(outsideRes.data);
+      } catch (err) {
+        console.error(err);
+        Alert.alert("Error", "Failed to fetch temperature data");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const fetchTemperatureData = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${baseUrl}/inside-temperature/getinsideTemperature`
-      );
-      setInsideData(response.data);
-      setCurrentPage(1);
-    } catch (err) {
-      Alert.alert("Error", "Failed to fetch inside temperature data");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOutsideTemperatureData = async () => {
-    try {
-      const response = await axios.get(
-        `${baseUrl}/outside-temperature/getoutsideTemperature`
-      );
-      setOutsideData(response.data);
-      setOutsidePage(1);
-    } catch (err) {
-      Alert.alert("Error", "Failed to fetch outside temperature data");
-      console.error(err);
-    }
-  };
-
+  /* -----------------------  RANGE SEARCH  ----------------------- */
   const fetchByRange = async () => {
     setLoading(true);
     try {
       const [insideRes, outsideRes] = await Promise.all([
         axios.get(`${baseUrl}/inside-temperature/range`, {
-          params: {
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-          },
+          params: { start: startDate.toISOString(), end: endDate.toISOString() },
         }),
         axios.get(`${baseUrl}/outside-temperature/range`, {
-          params: {
-            start: startDate.toISOString(),
-            end: endDate.toISOString(),
-          },
+          params: { start: startDate.toISOString(), end: endDate.toISOString() },
         }),
       ]);
+
+      // Raw logs (tables)
       setInsideData(insideRes.data);
       setOutsideData(outsideRes.data);
       setCurrentPage(1);
       setOutsidePage(1);
+
+      // Charts
+      const insideGrouped = groupByDayAverage(insideRes.data);
+      const outsideGrouped = groupByDayAverage(outsideRes.data);
+
+      setChartDataInside({
+        labels: insideGrouped.map((row) => row.label),
+        datasets: [{ data: insideGrouped.map((row) => row.avg) }],
+      });
+      setChartDataOutside({
+        labels: outsideGrouped.map((row) => row.label),
+        datasets: [{ data: outsideGrouped.map((row) => row.avg) }],
+      });
     } catch (err) {
-      Alert.alert("Error", "Failed to fetch temperature data by range");
       console.error(err);
+      Alert.alert("Error", "Failed to fetch temperature data by range");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = () => {
-    fetchByRange();
-  };
-
+  /* ---------------------------  RENDER  --------------------------- */
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
       {loading ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#000" />
         </View>
       ) : (
         <>
           <Text style={styles.header}>Temperature Report</Text>
 
+          {/* ------------------- INSIDE CHART ------------------- */}
+          <Text style={styles.subHeader}>Inside Temperature</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataInside}
+              width={Math.max(
+                chartDataInside.labels.length * 60,
+                Dimensions.get("window").width
+              )}
+              height={250}
+              yAxisSuffix="°C"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (o = 1) => `rgba(0, 123, 255, ${o})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+                fillShadowGradientFrom: "#4facfe",
+                fillShadowGradientTo: "#00f2fe",
+                fillShadowGradientOpacity: 1,
+                barPercentage: 0.6,
+              }}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
+
+          {/* ------------------ OUTSIDE CHART ------------------ */}
+          <Text style={styles.subHeader}>Outside Temperature</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataOutside}
+              width={Math.max(
+                chartDataOutside.labels.length * 60,
+                Dimensions.get("window").width
+              )}
+              height={250}
+              yAxisSuffix="°C"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (o = 1) => `rgba(255, 140, 0, ${o})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+                fillShadowGradientFrom: "#f7971e",
+                fillShadowGradientTo: "#ffd200",
+                fillShadowGradientOpacity: 1,
+                barPercentage: 0.6,
+              }}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
+
+          {/* ------------------ DATE PICKERS ------------------ */}
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               onPress={() => setOpenStartPicker(true)}
@@ -175,40 +241,19 @@ const TemperatureUsage = () => {
             />
           )}
 
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <TouchableOpacity style={styles.searchButton} onPress={fetchByRange}>
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
-          <Text style={styles.subHeader}>Inside Temperature</Text>
-          <BarChart
-            data={{
-              labels: chartLabels,
-              datasets: [{ data: dummyInsideTemp }],
-              legend: ["Temp (°C)"],
-            }}
-            width={Dimensions.get("window").width - 20}
-            height={250}
-            yAxisSuffix="°C"
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: () => "#333",
-              decimalPlaces: 1,
-            }}
-            verticalLabelRotation={45}
-            fromZero
-            style={styles.chart}
-          />
-
+          {/* ------------------ INSIDE TABLE ------------------ */}
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Inside Temperature Logs</Text>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Temp (°C)</Text>
               <Text style={styles.tableHeaderText}>Timestamp</Text>
             </View>
-            {currentInside.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
+            {currentInside.map((item, i) => (
+              <View key={i} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.temperature}°C</Text>
                 <Text style={styles.tableCell}>
                   {new Date(item.timestamp).toLocaleString()}
@@ -230,9 +275,7 @@ const TemperatureUsage = () => {
                 Page {currentPage} of {totalPages}
               </Text>
               <TouchableOpacity
-                onPress={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
+                onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 style={[
                   styles.arrowButton,
@@ -244,36 +287,15 @@ const TemperatureUsage = () => {
             </View>
           </View>
 
-          <Text style={styles.subHeader}>Outside Temperature</Text>
-          <BarChart
-            data={{
-              labels: chartLabels,
-              datasets: [{ data: dummyOutsideTemp }],
-              legend: ["Temp (°C)"],
-            }}
-            width={Dimensions.get("window").width - 20}
-            height={250}
-            yAxisSuffix="°C"
-            chartConfig={{
-              backgroundGradientFrom: "#fff",
-              backgroundGradientTo: "#fff",
-              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-              labelColor: () => "#333",
-              decimalPlaces: 1,
-            }}
-            verticalLabelRotation={45}
-            fromZero
-            style={styles.chart}
-          />
-
+          {/* ----------------- OUTSIDE TABLE ----------------- */}
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Outside Temperature Logs</Text>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Temp (°C)</Text>
               <Text style={styles.tableHeaderText}>Timestamp</Text>
             </View>
-            {currentOutside.map((item, index) => (
-              <View key={index} style={styles.tableRow}>
+            {currentOutside.map((item, i) => (
+              <View key={i} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.temperature}°C</Text>
                 <Text style={styles.tableCell}>
                   {new Date(item.timestamp).toLocaleString()}
@@ -315,8 +337,14 @@ const TemperatureUsage = () => {
   );
 };
 
+/* --------------------------  STYLES  -------------------------- */
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: "#f5f5f5" },
+  container: {
+    padding: 10,
+    marginTop: 25,
+    paddingBottom: 30,
+    backgroundColor: "#f5f5f5",
+  },
   header: { fontSize: 22, fontWeight: "bold", marginVertical: 10 },
   subHeader: {
     fontSize: 18,
@@ -325,13 +353,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#000",
   },
-  loadingContainer: {
+  chart: { marginVertical: 10, borderRadius: 16 },
+  loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    height: Dimensions.get("window").height * 1.0, // Adjust height as needed
+    minHeight: 680,
   },
-  chart: { marginVertical: 10, borderRadius: 16 },
   datePickerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -392,7 +420,12 @@ const styles = StyleSheet.create({
   },
   disabledArrowButton: { backgroundColor: "#ccc" },
   arrowText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
-  pageInfoText: { fontSize: 14, fontWeight: "bold", color: "#333" },
+  pageInfoText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 6,
+  },
 });
 
 export default TemperatureUsage;
