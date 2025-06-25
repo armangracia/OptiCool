@@ -46,11 +46,6 @@ const TemperatureUsage = () => {
     });
   };
 
-  const filteredOutsideData = filterByYearMonth(
-    outsideData,
-    selectedYearOutside,
-    selectedMonthOutside
-  );
 
   const [chartDataInside, setChartDataInside] = useState({
     labels: [],
@@ -92,11 +87,9 @@ const TemperatureUsage = () => {
     outsideIndexOfLastItem
   );
 
-  const filteredInsideData = filterByYearMonth(
-    insideData,
-    selectedYear,
-    selectedMonth
-  );
+  const filteredInsideData = filterByYearMonth(insideData, selectedYear, selectedMonth);
+const filteredOutsideData = filterByYearMonth(outsideData, selectedYear, selectedMonth);
+
   const groupByDayAverage = (data) => {
     const grouped = {};
     data.forEach((entry) => {
