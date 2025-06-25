@@ -25,6 +25,11 @@ const HumidityUsage = () => {
   const [selectedYear, setSelectedYear] = useState("All");
   const [selectedMonth, setSelectedMonth] = useState("All");
   const [pageInput, setPageInput] = useState("1");
+  const [outsideSelectedYear, setOutsideSelectedYear] = useState("All");
+  const [outsideSelectedMonth, setOutsideSelectedMonth] = useState("All");
+  const [outsidePageInput, setOutsidePageInput] = useState("1");
+  const [filteredInsideData, setFilteredInsideData] = useState([]);
+  const [filteredOutsideData, setFilteredOutsideData] = useState([]);
 
   const [humidityData, setHumidityData] = useState([]);
   const [outsideHumidityData, setOutsideHumidityData] = useState([]);
@@ -42,19 +47,22 @@ const HumidityUsage = () => {
   const itemsPerPage = 20;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentData = humidityData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(humidityData.length / itemsPerPage);
+  const currentData = filteredInsideData.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredInsideData.length / itemsPerPage);
 
   const [outsidePage, setOutsidePage] = useState(1);
   const outsideItemsPerPage = 20;
   const outsideIndexOfLastItem = outsidePage * outsideItemsPerPage;
   const outsideIndexOfFirstItem = outsideIndexOfLastItem - outsideItemsPerPage;
-  const currentOutsideData = outsideHumidityData.slice(
+  const currentOutsideData = filteredOutsideData.slice(
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
   );
   const outsideTotalPages = Math.ceil(
-    outsideHumidityData.length / outsideItemsPerPage
+    filteredOutsideData.length / outsideItemsPerPage
   );
 
   useEffect(() => {
@@ -65,6 +73,52 @@ const HumidityUsage = () => {
   useEffect(() => {
     setPageInput(currentPage.toString());
   }, [currentPage]);
+
+  useEffect(() => {
+    setOutsidePageInput(outsidePage.toString());
+  }, [outsidePage]);
+
+  useEffect(() => {
+    let filtered = humidityData;
+
+    if (selectedYear !== "All") {
+      filtered = filtered.filter((item) => {
+        const date = new Date(item.timestamp);
+        return date.getFullYear().toString() === selectedYear;
+      });
+    }
+
+    if (selectedMonth !== "All") {
+      filtered = filtered.filter((item) => {
+        const date = new Date(item.timestamp);
+        return date.getMonth().toString() === selectedMonth;
+      });
+    }
+
+    setFilteredInsideData(filtered);
+    setCurrentPage(1); // reset page on filter
+  }, [selectedYear, selectedMonth, humidityData]);
+
+  useEffect(() => {
+    let filtered = outsideHumidityData;
+
+    if (outsideSelectedYear !== "All") {
+      filtered = filtered.filter((item) => {
+        const date = new Date(item.timestamp);
+        return date.getFullYear().toString() === outsideSelectedYear;
+      });
+    }
+
+    if (outsideSelectedMonth !== "All") {
+      filtered = filtered.filter((item) => {
+        const date = new Date(item.timestamp);
+        return date.getMonth().toString() === outsideSelectedMonth;
+      });
+    }
+
+    setFilteredOutsideData(filtered);
+    setOutsidePage(1); // reset page on filter
+  }, [outsideSelectedYear, outsideSelectedMonth, outsideHumidityData]);
 
   const fetchHumidityData = async () => {
     setLoading(true);
@@ -350,6 +404,7 @@ const HumidityUsage = () => {
               </TouchableOpacity>
             </View>
           </View>
+
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Inside Humidity Logs</Text>
             <View style={styles.tableHeader}>
@@ -389,6 +444,103 @@ const HumidityUsage = () => {
                 ]}
               >
                 <Text style={styles.arrowText}>{">"}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 5,
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Picker
+                selectedValue={outsideSelectedYear}
+                onValueChange={(itemValue) => setOutsideSelectedYear(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 110,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Years" value="All" />
+                <Picker.Item label="2023" value="2023" />
+                <Picker.Item label="2024" value="2024" />
+                <Picker.Item label="2025" value="2025" />
+              </Picker>
+
+              <Picker
+                selectedValue={outsideSelectedMonth}
+                onValueChange={(itemValue) =>
+                  setOutsideSelectedMonth(itemValue)
+                }
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 110,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Months" value="All" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item
+                    key={i}
+                    label={new Date(0, i).toLocaleString("default", {
+                      month: "short",
+                    })}
+                    // value={i.toString()}
+                    value={`${i}`}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 6,
+                  width: 40,
+                  textAlign: "center",
+                }}
+                placeholder={`${currentPage}`}
+                keyboardType="numeric"
+                value={outsidePageInput}
+                onChangeText={(text) => setOutsidePageInput(text)}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const page = parseInt(outsidePageInput);
+                  if (!isNaN(page) && page >= 1 && page <= outsideTotalPages) {
+                    setOutsidePage(page);
+                  } else {
+                    Alert.alert(
+                      "Invalid Page",
+                      `Please enter a number between 1 and ${outsideTotalPages}`
+                    );
+                  }
+                }}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: "#000",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Go</Text>
               </TouchableOpacity>
             </View>
           </View>
