@@ -1,11 +1,22 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+} from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import dmt3API from "../../services/dmt3API";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSelector } from "react-redux";
+import logActivity from "../../assets/common/logActivity";
 
 const CircleContainer = () => {
+  const { user, token } = useSelector((state) => state.auth);
   const [temperature, setTemperature] = useState(20);
   const [modalVisible, setModalVisible] = useState(false);
   const [newTemperature, setNewTemperature] = useState(temperature);
@@ -15,8 +26,8 @@ const CircleContainer = () => {
   const percentage = (temperature - 16) / (30 - 16);
   const strokeDashoffset = circumference * (1 - percentage);
 
-  const [fanStatus, setFanStatus] = useState(false)
-  const [exhaustStatus, setExhaustStatus] = useState(false)
+  const [fanStatus, setFanStatus] = useState(false);
+  const [exhaustStatus, setExhaustStatus] = useState(false);
 
   const handleSave = async () => {
     setTemperature(newTemperature);
@@ -25,55 +36,60 @@ const CircleContainer = () => {
     try {
       const data = await dmt3API.adjustACTempAPI(newTemperature);
       console.log(data);
-      getTempAC()
+      getTempAC();
+
+      await logActivity({
+        userId: user._id,
+        action: `Adjusted AC temperature to ${newTemperature}°C`,
+        token,
+      });
+
     } catch (err) {
       console.log(err);
-      Alert.alert("No running system", "Not connected to the system")
+      Alert.alert("No running system", "Not connected to the system");
     }
   };
 
   const resetAll = () => {
-    setFanStatus(false)
-    setExhaustStatus(false)
-  }
+    setFanStatus(false);
+    setExhaustStatus(false);
+  };
 
   const getComponentsStatus = async () => {
     try {
-
       const data = await dmt3API.getComponentsStatusAPI();
       setExhaustStatus(data.exhaust);
       setFanStatus(data.efan);
-
     } catch (err) {
       console.log(err);
-      resetAll()
+      resetAll();
     }
-  }
-
+  };
 
   const getTempAC = async () => {
     try {
       const data = await dmt3API.getCurrentACTempAPI();
-      setTemperature(data)
+      setTemperature(data);
       console.log("Asdsad");
-      console.log(data)
-
+      console.log(data);
     } catch (err) {
       console.log(err);
     }
-  }
+  };
 
   useFocusEffect(
     useCallback(() => {
-      getTempAC()
-      getComponentsStatus()
+      getTempAC();
+      getComponentsStatus();
     }, [])
-  )
-
+  );
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.overrideButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity
+        style={styles.overrideButton}
+        onPress={() => setModalVisible(true)}
+      >
         <View style={styles.circleButton}>
           <MaterialCommunityIcons name="pencil" size={24} color="#ffffff" />
         </View>
@@ -116,18 +132,39 @@ const CircleContainer = () => {
 
       <View style={styles.statusRow}>
         <View style={styles.statusCard}>
-          <MaterialCommunityIcons name="fan" size={30} color="#6C9AB2" style={styles.iconStyle} />
+          <MaterialCommunityIcons
+            name="fan"
+            size={30}
+            color="#6C9AB2"
+            style={styles.iconStyle}
+          />
           <View>
             <Text style={styles.statusCardText}>Ceiling Fan</Text>
-            <Text style={[styles.statusCardStatus, !fanStatus && { color: 'red' }]}>{fanStatus ? "Active" : "Inactive"}</Text>
+            <Text
+              style={[styles.statusCardStatus, !fanStatus && { color: "red" }]}
+            >
+              {fanStatus ? "Active" : "Inactive"}
+            </Text>
           </View>
         </View>
 
         <View style={styles.statusCard}>
-          <MaterialCommunityIcons name="fan" size={30} color="#6C9AB2" style={styles.iconStyle} />
+          <MaterialCommunityIcons
+            name="fan"
+            size={30}
+            color="#6C9AB2"
+            style={styles.iconStyle}
+          />
           <View>
             <Text style={styles.statusCardText}>Exhaust</Text>
-            <Text style={[styles.statusCardStatus, !exhaustStatus && { color: 'red' }]}>{exhaustStatus ? "Active" : "Inactive"}</Text>
+            <Text
+              style={[
+                styles.statusCardStatus,
+                !exhaustStatus && { color: "red" },
+              ]}
+            >
+              {exhaustStatus ? "Active" : "Inactive"}
+            </Text>
           </View>
         </View>
       </View>
@@ -145,10 +182,13 @@ const CircleContainer = () => {
               style={styles.input}
               keyboardType="numeric"
               value={String(newTemperature)}
-              onChangeText={text => setNewTemperature(Number(text))}
+              onChangeText={(text) => setNewTemperature(Number(text))}
             />
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.button} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => setModalVisible(false)}
+              >
                 <Text style={styles.buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.button} onPress={handleSave}>
@@ -208,12 +248,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginHorizontal: 20,
     marginTop: 30,
     marginBottom: 20,
-
   },
   statusCard: {
     flexDirection: "row",
@@ -235,15 +274,15 @@ const styles = StyleSheet.create({
   },
   statusCardText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: 'black',
+    fontWeight: "bold",
+    color: "black",
     marginTop: 5,
     marginRight: 10,
   },
   statusCardStatus: {
     fontSize: 14,
-    color: 'green',
-    fontWeight: 'bold',
+    color: "green",
+    fontWeight: "bold",
   },
   modalContainer: {
     flex: 1,
