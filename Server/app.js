@@ -22,10 +22,11 @@ const insideHumidityRoutes = require("./routes/insideHumidityRoutes");
 const outsideHumidityRoutes = require("./routes/outsideHumidityRoutes");
 const insideTemperatureRoutes = require("./routes/insideTemperatureRoutes");
 const outsideTemperatureRoutes = require("./routes/outsideTemperatureRoutes");
-
+const activityLogRoutes = require('./routes/activityLogRoutes');
 
 // app.use('/', statusRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use("/api/v1/activity-log", activityLogRoutes);
 app.use('/api/v1/ereports', ereportRoutes);
 app.use('/api/v1/posts', postRoutes);
 app.use('/api/v1/power-consumption', powerConsumptionRoutes);

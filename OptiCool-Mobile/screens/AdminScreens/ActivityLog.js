@@ -1,27 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
-
-const fetchActivityLogs = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        { id: 1, action: 'Logged in', timestamp: '2025-01-21 10:00:00' },
-        { id: 2, action: 'Viewed Dashboard', timestamp: '2025-01-21 10:05:00' },
-        { id: 3, action: 'Logged out', timestamp: '2025-01-21 10:15:00' },
-      ]);
-    }, 1000);
-  });
-};
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import axios from "axios";
+import baseURL from "../../assets/common/baseUrl";
+import { useSelector } from "react-redux";
+import moment from "moment-timezone";
 
 const ActivityLog = () => {
+  const { user, token } = useSelector((state) => state.auth);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchActivityLogs().then((data) => {
-      setLogs(data);
+  const fetchActivityLogs = async () => {
+    try {
+      const response = await axios.get(
+        `${baseURL}/activity-log?userId=${user._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.data.success) {
+        setLogs(response.data.logs);
+      } else {
+        console.error("Failed to fetch logs:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+    } finally {
       setLoading(false);
-    });
+    }
+  };
+
+  useEffect(() => {
+    fetchActivityLogs();
   }, []);
 
   if (loading) {
@@ -38,12 +56,20 @@ const ActivityLog = () => {
       <Text style={styles.title}>Activity Log</Text>
       <FlatList
         data={logs}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => (
           <View style={styles.logItem}>
-            <View style={styles.logText}>
+            <View style={styles.leftSection}>
+              <Text style={styles.username}>
+                {item.userId?.username || "Unknown User"}
+              </Text>
               <Text style={styles.action}>{item.action}</Text>
-              <Text style={styles.timestamp}>{item.timestamp}</Text>
+            </View>
+            <View style={styles.rightSection}>
+              {/* <Text style={styles.status}>✔ Good Status</Text> */}
+              <Text style={styles.timestamp}>
+                {moment(item.timestamp).tz("Asia/Manila").format("hh:mm A")}
+              </Text>
             </View>
           </View>
         )}
@@ -56,57 +82,73 @@ const ActivityLog = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eef3f7',
+    backgroundColor: "#eef3f7",
     padding: 20,
+    marginTop: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
-    color: '#333',
+    color: "#333",
   },
   listContent: {
     paddingBottom: 20,
   },
   logItem: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  logText: {
-    flexDirection: 'column',
-  },
-  action: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 6,
-  },
-  timestamp: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    backgroundColor: '#e8f5e9',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
+  flexDirection: "row",
+  backgroundColor: "#ffffff",
+  borderRadius: 16,
+  paddingVertical: 16,
+  paddingHorizontal: 20,
+  marginBottom: 15,
+  justifyContent: "space-between",
+  alignItems: "center",
+ 
+},
+
+leftSection: {
+  flex: 1,
+  flexDirection: "column",
+},
+
+rightSection: {
+  alignItems: "flex-end",
+},
+
+username: {
+  fontSize: 16,
+  fontWeight: "600",
+  color: "#2c3e50",
+  marginBottom: 2,
+},
+
+action: {
+  fontSize: 14,
+  color: "#555",
+},
+
+status: {
+  fontSize: 14,
+  color: "#4CAF50",
+  fontWeight: "600",
+  marginBottom: 4,
+},
+
+timestamp: {
+  fontSize: 12,
+  color: "#999",
+},
   centered: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#eef3f7',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#eef3f7",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
 });
 

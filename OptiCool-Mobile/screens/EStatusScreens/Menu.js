@@ -14,6 +14,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
 import dmt3API from "../../services/dmt3API";
+import logActivity from "../../assets/common/logActivity";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import moment from "moment-timezone";
@@ -124,6 +125,14 @@ const Menu = () => {
 
       if (response.data.success) {
         Alert.alert("Success", "Report submitted successfully.");
+
+        // 🔥 Log activity here
+        await logActivity({
+          userId: user._id,
+          action: `Reported issue "${selectedStatus}" on ${reportedAppliance}`,
+          token,
+        });
+
         setShowReportModal(false);
       } else {
         Alert.alert(
@@ -348,14 +357,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   divider: {
-  height: 4,
-  width: 80,
-  backgroundColor: "#ccc",
-  borderRadius: 10,
-  alignSelf: "center",
-  marginVertical: 5,
-  marginBottom: -10,
-},
+    height: 4,
+    width: 80,
+    backgroundColor: "#ccc",
+    borderRadius: 10,
+    alignSelf: "center",
+    marginVertical: 5,
+    marginBottom: -10,
+  },
   contentCardText: { fontSize: 14, fontWeight: "bold", color: "black" },
   contentCardStatus: { fontSize: 14, fontWeight: "bold" },
   contentIconStyle: { marginRight: 20 },
