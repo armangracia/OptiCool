@@ -234,11 +234,15 @@ const HumidityUsage = () => {
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`, // gradient blue
                 labelColor: () => "#333",
                 decimalPlaces: 1,
+                fillShadowGradientFrom: "#4facfe", // light blue
+                fillShadowGradientTo: "#00f2fe", // cyan blue
+                fillShadowGradientOpacity: 1,
+                barPercentage: 0.6,
               }}
-              verticalLabelRotation={45}
+              verticalLabelRotation={0} // horizontal labels
               fromZero
               style={styles.chart}
             />
@@ -257,11 +261,15 @@ const HumidityUsage = () => {
               chartConfig={{
                 backgroundGradientFrom: "#fff",
                 backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, // gradient orange
                 labelColor: () => "#333",
                 decimalPlaces: 1,
+                fillShadowGradientFrom: "#f7971e", // light orange
+                fillShadowGradientTo: "#ffd200", // yellow orange
+                fillShadowGradientOpacity: 1,
+                barPercentage: 0.6,
               }}
-              verticalLabelRotation={45}
+              verticalLabelRotation={0} // horizontal labels
               fromZero
               style={styles.chart}
             />
@@ -329,7 +337,7 @@ const HumidityUsage = () => {
                   borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 6,
-                  width: 110,
+                  width: 120,
                   height: 44,
                 }}
               >
@@ -346,7 +354,7 @@ const HumidityUsage = () => {
                   borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 6,
-                  width: 110,
+                  width: 120,
                   height: 44,
                 }}
               >
@@ -373,7 +381,7 @@ const HumidityUsage = () => {
                   borderColor: "#ccc",
                   borderRadius: 6,
                   padding: 6,
-                  width: 40,
+                  width: 50,
                   textAlign: "center",
                 }}
                 placeholder={`${currentPage}`}
@@ -467,7 +475,7 @@ const HumidityUsage = () => {
                   borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 6,
-                  width: 110,
+                  width: 140,
                   height: 44,
                 }}
               >
@@ -509,11 +517,11 @@ const HumidityUsage = () => {
             >
               <TextInput
                 style={{
-                  borderWidth: 1,
+                 borderWidth: 1,
                   borderColor: "#ccc",
                   borderRadius: 6,
                   padding: 6,
-                  width: 40,
+                  width: 45,
                   textAlign: "center",
                 }}
                 placeholder={`${currentPage}`}
@@ -595,7 +603,12 @@ const HumidityUsage = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 10, marginTop: 25, backgroundColor: "#f5f5f5" },
+  container: {
+    padding: 10,
+    marginTop: 25,
+    paddingBottom: 30,
+    backgroundColor: "#f5f5f5",
+  },
   header: {
     fontSize: 22,
     fontWeight: "bold",
@@ -676,7 +689,7 @@ const styles = StyleSheet.create({
   },
   disabledArrowButton: { backgroundColor: "#ccc" },
   arrowText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
-  pageInfoText: { fontSize: 14, fontWeight: "bold", color: "#333" },
+  pageInfoText: { fontSize: 14, fontWeight: "bold", color: "#333", marginTop: 6 },
 });
 
 export default HumidityUsage;
