@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  TextInput,
   Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { BarChart } from "react-native-chart-kit";
+import { Picker } from "@react-native-picker/picker";
 import { Dimensions } from "react-native";
 import axios from "axios";
 import baseUrl from "../../assets/common/baseUrl";
@@ -20,6 +22,9 @@ const HumidityUsage = () => {
   const [openStartPicker, setOpenStartPicker] = useState(false);
   const [openEndPicker, setOpenEndPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState("All");
+  const [pageInput, setPageInput] = useState("1");
 
   const [humidityData, setHumidityData] = useState([]);
   const [outsideHumidityData, setOutsideHumidityData] = useState([]);
@@ -48,17 +53,25 @@ const HumidityUsage = () => {
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
   );
-  const outsideTotalPages = Math.ceil(outsideHumidityData.length / outsideItemsPerPage);
+  const outsideTotalPages = Math.ceil(
+    outsideHumidityData.length / outsideItemsPerPage
+  );
 
   useEffect(() => {
     fetchHumidityData();
     fetchOutsideHumidityData();
   }, []);
 
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
+
   const fetchHumidityData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/inside-humidity/getinsideHumidity`);
+      const response = await axios.get(
+        `${baseUrl}/inside-humidity/getinsideHumidity`
+      );
       setHumidityData(response.data);
       setCurrentPage(1);
     } catch (err) {
@@ -71,7 +84,9 @@ const HumidityUsage = () => {
 
   const fetchOutsideHumidityData = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/outside-humidity/getoutsideHumidity`);
+      const response = await axios.get(
+        `${baseUrl}/outside-humidity/getoutsideHumidity`
+      );
       setOutsideHumidityData(response.data);
       setOutsidePage(1);
     } catch (err) {
@@ -85,10 +100,16 @@ const HumidityUsage = () => {
     try {
       const [insideRes, outsideRes] = await Promise.all([
         axios.get(`${baseUrl}/inside-humidity/range`, {
-          params: { start: startDate.toISOString(), end: endDate.toISOString() },
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
         }),
         axios.get(`${baseUrl}/outside-humidity/range`, {
-          params: { start: startDate.toISOString(), end: endDate.toISOString() },
+          params: {
+            start: startDate.toISOString(),
+            end: endDate.toISOString(),
+          },
         }),
       ]);
 
@@ -145,6 +166,53 @@ const HumidityUsage = () => {
         <>
           <Text style={styles.header}>Humidity Report</Text>
 
+          <Text style={styles.subHeader}>Inside Humidity</Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataInside}
+              width={Math.max(
+                chartDataInside.labels.length * 60,
+                Dimensions.get("window").width
+              )}
+              height={250}
+              yAxisSuffix="%"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+              }}
+              verticalLabelRotation={45}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
+
+          <Text style={styles.subHeader}>Outside Humidity</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <BarChart
+              data={chartDataOutside}
+              width={Math.max(
+                chartDataOutside.labels.length * 60,
+                Dimensions.get("window").width
+              )}
+              height={250}
+              yAxisSuffix="%"
+              chartConfig={{
+                backgroundGradientFrom: "#fff",
+                backgroundGradientTo: "#fff",
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                labelColor: () => "#333",
+                decimalPlaces: 1,
+              }}
+              verticalLabelRotation={45}
+              fromZero
+              style={styles.chart}
+            />
+          </ScrollView>
+
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               onPress={() => setOpenStartPicker(true)}
@@ -188,26 +256,100 @@ const HumidityUsage = () => {
             <Text style={styles.searchButtonText}>Search</Text>
           </TouchableOpacity>
 
-          <Text style={styles.subHeader}>Inside Humidity</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <BarChart
-              data={chartDataInside}
-              width={Math.max(chartDataInside.labels.length * 60, Dimensions.get("window").width)}
-              height={250}
-              yAxisSuffix="%"
-              chartConfig={{
-                backgroundGradientFrom: "#fff",
-                backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: () => "#333",
-                decimalPlaces: 1,
-              }}
-              verticalLabelRotation={45}
-              fromZero
-              style={styles.chart}
-            />
-          </ScrollView>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 5,
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <Picker
+                selectedValue={selectedYear}
+                onValueChange={(itemValue) => setSelectedYear(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 110,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Years" value="All" />
+                <Picker.Item label="2023" value="2023" />
+                <Picker.Item label="2024" value="2024" />
+                <Picker.Item label="2025" value="2025" />
+              </Picker>
 
+              <Picker
+                selectedValue={selectedMonth}
+                onValueChange={(itemValue) => setSelectedMonth(itemValue)}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  width: 110,
+                  height: 44,
+                }}
+              >
+                <Picker.Item label="All Months" value="All" />
+                {Array.from({ length: 12 }, (_, i) => (
+                  <Picker.Item
+                    key={i}
+                    label={new Date(0, i).toLocaleString("default", {
+                      month: "short",
+                    })}
+                    // value={i.toString()}
+                    value={`${i}`}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            >
+              <TextInput
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ccc",
+                  borderRadius: 6,
+                  padding: 6,
+                  width: 40,
+                  textAlign: "center",
+                }}
+                placeholder={`${currentPage}`}
+                keyboardType="numeric"
+                value={pageInput}
+                onChangeText={(text) => setPageInput(text)}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const page = parseInt(pageInput);
+                  if (!isNaN(page) && page >= 1 && page <= totalPages) {
+                    setCurrentPage(page);
+                  } else {
+                    Alert.alert(
+                      "Invalid Page",
+                      `Please enter a number between 1 and ${totalPages}`
+                    );
+                  }
+                }}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 10,
+                  backgroundColor: "#000",
+                  borderRadius: 6,
+                }}
+              >
+                <Text style={{ color: "#fff" }}>Go</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Inside Humidity Logs</Text>
             <View style={styles.tableHeader}>
@@ -237,7 +379,9 @@ const HumidityUsage = () => {
                 Page {currentPage} of {totalPages}
               </Text>
               <TouchableOpacity
-                onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                onPress={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 style={[
                   styles.arrowButton,
@@ -248,26 +392,6 @@ const HumidityUsage = () => {
               </TouchableOpacity>
             </View>
           </View>
-
-          <Text style={styles.subHeader}>Outside Humidity</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <BarChart
-              data={chartDataOutside}
-              width={Math.max(chartDataOutside.labels.length * 60, Dimensions.get("window").width)}
-              height={250}
-              yAxisSuffix="%"
-              chartConfig={{
-                backgroundGradientFrom: "#fff",
-                backgroundGradientTo: "#fff",
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: () => "#333",
-                decimalPlaces: 1,
-              }}
-              verticalLabelRotation={45}
-              fromZero
-              style={styles.chart}
-            />
-          </ScrollView>
 
           <View style={styles.tableContainer}>
             <Text style={styles.tableTitle}>Outside Humidity Logs</Text>
@@ -298,11 +422,14 @@ const HumidityUsage = () => {
                 Page {outsidePage} of {outsideTotalPages}
               </Text>
               <TouchableOpacity
-                onPress={() => setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))}
+                onPress={() =>
+                  setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))
+                }
                 disabled={outsidePage === outsideTotalPages}
                 style={[
                   styles.arrowButton,
-                  outsidePage === outsideTotalPages && styles.disabledArrowButton,
+                  outsidePage === outsideTotalPages &&
+                    styles.disabledArrowButton,
                 ]}
               >
                 <Text style={styles.arrowText}>{">"}</Text>
@@ -321,7 +448,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginVertical: 10,
-    marginBottom: 20,
+    marginBottom: -20,
   },
   subHeader: {
     fontSize: 18,
