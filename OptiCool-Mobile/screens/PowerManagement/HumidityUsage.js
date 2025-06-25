@@ -34,8 +34,7 @@ const HumidityUsage = () => {
   const [outsidePage, setOutsidePage] = useState(1);
   const outsideItemsPerPage = 20;
   const outsideIndexOfLastItem = outsidePage * outsideItemsPerPage;
-  const outsideIndexOfFirstItem =
-    outsideIndexOfLastItem - outsideItemsPerPage;
+  const outsideIndexOfFirstItem = outsideIndexOfLastItem - outsideItemsPerPage;
   const currentOutsideData = outsideHumidityData.slice(
     outsideIndexOfFirstItem,
     outsideIndexOfLastItem
@@ -129,12 +128,13 @@ const HumidityUsage = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#000" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#000" />
+        </View>
       ) : (
         <>
           <Text style={styles.header}>Humidity Report</Text>
 
-          {/* Date Pickers + Search */}
           <View style={styles.datePickerContainer}>
             <TouchableOpacity
               onPress={() => setOpenStartPicker(true)}
@@ -244,7 +244,6 @@ const HumidityUsage = () => {
             </View>
           </View>
 
-          {/* Outside Humidity Section */}
           <Text style={styles.subHeader}>Outside Humidity</Text>
           <BarChart
             data={{
@@ -317,8 +316,13 @@ const HumidityUsage = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: "#f5f5f5" },
-  header: { fontSize: 22, fontWeight: "bold", marginVertical: 10 },
+  container: { padding: 10, marginTop: 25, backgroundColor: "#f5f5f5" },
+  header: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginVertical: 10,
+    marginBottom: 20,
+  },
   subHeader: {
     fontSize: 18,
     fontWeight: "bold",
@@ -340,6 +344,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     width: "45%",
     alignItems: "center",
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 680, 
   },
   dateRangeDivider: { alignSelf: "center", marginHorizontal: 10 },
   searchButton: {
