@@ -35,16 +35,29 @@ const TemperatureUsage = () => {
   const outsideItemsPerPage = 20;
   const outsideIndexOfLastItem = outsidePage * outsideItemsPerPage;
   const outsideIndexOfFirstItem = outsideIndexOfLastItem - outsideItemsPerPage;
-  const currentOutside = outsideData.slice(outsideIndexOfFirstItem, outsideIndexOfLastItem);
+  const currentOutside = outsideData.slice(
+    outsideIndexOfFirstItem,
+    outsideIndexOfLastItem
+  );
   const outsideTotalPages = Math.ceil(outsideData.length / outsideItemsPerPage);
 
   const chartLabels = [
-    "8 AM", "9 AM", "10 AM", "11 AM", "12 PM",
-    "1 PM", "2 PM", "3 PM", "4 PM", "5 PM"
+    "8 AM",
+    "9 AM",
+    "10 AM",
+    "11 AM",
+    "12 PM",
+    "1 PM",
+    "2 PM",
+    "3 PM",
+    "4 PM",
+    "5 PM",
   ];
 
   const dummyInsideTemp = [24, 24.5, 25, 25.5, 26, 26.5, 27, 26.7, 26.2, 25.8];
-  const dummyOutsideTemp = [28, 28.3, 29, 29.5, 30, 30.2, 30.5, 30.1, 29.8, 29.2];
+  const dummyOutsideTemp = [
+    28, 28.3, 29, 29.5, 30, 30.2, 30.5, 30.1, 29.8, 29.2,
+  ];
 
   useEffect(() => {
     fetchTemperatureData();
@@ -54,7 +67,9 @@ const TemperatureUsage = () => {
   const fetchTemperatureData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${baseUrl}/inside-temperature/getinsideTemperature`);
+      const response = await axios.get(
+        `${baseUrl}/inside-temperature/getinsideTemperature`
+      );
       setInsideData(response.data);
       setCurrentPage(1);
     } catch (err) {
@@ -67,7 +82,9 @@ const TemperatureUsage = () => {
 
   const fetchOutsideTemperatureData = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/outside-temperature/getoutsideTemperature`);
+      const response = await axios.get(
+        `${baseUrl}/outside-temperature/getoutsideTemperature`
+      );
       setOutsideData(response.data);
       setOutsidePage(1);
     } catch (err) {
@@ -112,17 +129,25 @@ const TemperatureUsage = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#000" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#000" />
+        </View>
       ) : (
         <>
           <Text style={styles.header}>Temperature Report</Text>
 
           <View style={styles.datePickerContainer}>
-            <TouchableOpacity onPress={() => setOpenStartPicker(true)} style={styles.dateBox}>
+            <TouchableOpacity
+              onPress={() => setOpenStartPicker(true)}
+              style={styles.dateBox}
+            >
               <Text>{startDate.toDateString()}</Text>
             </TouchableOpacity>
             <Text style={styles.dateRangeDivider}>To</Text>
-            <TouchableOpacity onPress={() => setOpenEndPicker(true)} style={styles.dateBox}>
+            <TouchableOpacity
+              onPress={() => setOpenEndPicker(true)}
+              style={styles.dateBox}
+            >
               <Text>{endDate.toDateString()}</Text>
             </TouchableOpacity>
           </View>
@@ -185,22 +210,34 @@ const TemperatureUsage = () => {
             {currentInside.map((item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.temperature}°C</Text>
-                <Text style={styles.tableCell}>{new Date(item.timestamp).toLocaleString()}</Text>
+                <Text style={styles.tableCell}>
+                  {new Date(item.timestamp).toLocaleString()}
+                </Text>
               </View>
             ))}
             <View style={styles.paginationContainer}>
               <TouchableOpacity
                 onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                 disabled={currentPage === 1}
-                style={[styles.arrowButton, currentPage === 1 && styles.disabledArrowButton]}
+                style={[
+                  styles.arrowButton,
+                  currentPage === 1 && styles.disabledArrowButton,
+                ]}
               >
                 <Text style={styles.arrowText}>{"<"}</Text>
               </TouchableOpacity>
-              <Text style={styles.pageInfoText}>Page {currentPage} of {totalPages}</Text>
+              <Text style={styles.pageInfoText}>
+                Page {currentPage} of {totalPages}
+              </Text>
               <TouchableOpacity
-                onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                onPress={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
-                style={[styles.arrowButton, currentPage === totalPages && styles.disabledArrowButton]}
+                style={[
+                  styles.arrowButton,
+                  currentPage === totalPages && styles.disabledArrowButton,
+                ]}
               >
                 <Text style={styles.arrowText}>{">"}</Text>
               </TouchableOpacity>
@@ -238,22 +275,35 @@ const TemperatureUsage = () => {
             {currentOutside.map((item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.tableCell}>{item.temperature}°C</Text>
-                <Text style={styles.tableCell}>{new Date(item.timestamp).toLocaleString()}</Text>
+                <Text style={styles.tableCell}>
+                  {new Date(item.timestamp).toLocaleString()}
+                </Text>
               </View>
             ))}
             <View style={styles.paginationContainer}>
               <TouchableOpacity
                 onPress={() => setOutsidePage((p) => Math.max(p - 1, 1))}
                 disabled={outsidePage === 1}
-                style={[styles.arrowButton, outsidePage === 1 && styles.disabledArrowButton]}
+                style={[
+                  styles.arrowButton,
+                  outsidePage === 1 && styles.disabledArrowButton,
+                ]}
               >
                 <Text style={styles.arrowText}>{"<"}</Text>
               </TouchableOpacity>
-              <Text style={styles.pageInfoText}>Page {outsidePage} of {outsideTotalPages}</Text>
+              <Text style={styles.pageInfoText}>
+                Page {outsidePage} of {outsideTotalPages}
+              </Text>
               <TouchableOpacity
-                onPress={() => setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))}
+                onPress={() =>
+                  setOutsidePage((p) => Math.min(p + 1, outsideTotalPages))
+                }
                 disabled={outsidePage === outsideTotalPages}
-                style={[styles.arrowButton, outsidePage === outsideTotalPages && styles.disabledArrowButton]}
+                style={[
+                  styles.arrowButton,
+                  outsidePage === outsideTotalPages &&
+                    styles.disabledArrowButton,
+                ]}
               >
                 <Text style={styles.arrowText}>{">"}</Text>
               </TouchableOpacity>
@@ -274,6 +324,12 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 10,
     color: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: Dimensions.get("window").height * 1.0, // Adjust height as needed
   },
   chart: { marginVertical: 10, borderRadius: 16 },
   datePickerContainer: {
