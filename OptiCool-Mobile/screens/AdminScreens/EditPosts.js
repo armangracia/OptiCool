@@ -110,6 +110,41 @@ const EditPosts = ({ route, navigation }) => {
     return <Text>Loading...</Text>;
   }
 
+  const handleDelete = async () => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this post?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await axios.delete(
+                `${baseURL}/posts/deletePost/${postId}`
+              );
+
+              if (response.status === 200) {
+                await logActivity({
+                  userId: user._id,
+                  action: `Deleted post with ID: ${postId}`,
+                  token,
+                });
+
+                Alert.alert("Deleted", "Post deleted successfully.");
+                navigation.goBack();
+              }
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "Failed to delete post. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Edit Post</Text>
@@ -159,6 +194,15 @@ const EditPosts = ({ route, navigation }) => {
 
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
               <Text style={styles.buttonText}>Submit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                { backgroundColor: "#f44336", marginTop: 10 },
+              ]}
+              onPress={handleDelete}
+            >
+              <Text style={styles.buttonText}>Delete</Text>
             </TouchableOpacity>
           </View>
         )}

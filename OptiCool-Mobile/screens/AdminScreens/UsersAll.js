@@ -75,7 +75,7 @@ const UsersRoute = ({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Users</Text>
         {paginatedUsers.map((user) => (
           <Card key={user._id} style={styles.card}>
@@ -138,7 +138,8 @@ const PendingUsersRoute = ({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container}
+      showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Pending Users</Text>
         {paginatedPending.map((user) => (
           <Card key={user._id} style={styles.card}>
