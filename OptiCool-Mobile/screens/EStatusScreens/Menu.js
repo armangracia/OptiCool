@@ -148,18 +148,34 @@ const Menu = () => {
     }
   };
 
+  // const getComponentsStatus = async () => {
+  //   try {
+  //     const data = await dmt3API.getComponentsStatusAPI();
+  //     setIsConnected(true);
+  //     if (Boolean(data.ac1) !== applianceStatus.AC.AC)
+  //       toggleAppliance("AC", "AC");
+  //     if (Boolean(data.blower) !== applianceStatus.Blower["Blower 1"])
+  //       toggleAppliance("Blower", "Blower 1");
+  //     if (Boolean(data.efan) !== applianceStatus.Fan["Fan 1"])
+  //       toggleAppliance("Fan", "Fan 1");
+  //     if (Boolean(data.exhaust) !== applianceStatus.Exhaust["Exhaust 1"])
+  //       toggleAppliance("Exhaust", "Exhaust 1");
+  //   } catch {
+  //     setIsConnected(false);
+  //   }
+  // };
+
   const getComponentsStatus = async () => {
     try {
       const data = await dmt3API.getComponentsStatusAPI();
       setIsConnected(true);
-      if (Boolean(data.ac1) !== applianceStatus.AC.AC)
-        toggleAppliance("AC", "AC");
-      if (Boolean(data.blower) !== applianceStatus.Blower["Blower 1"])
-        toggleAppliance("Blower", "Blower 1");
-      if (Boolean(data.efan) !== applianceStatus.Fan["Fan 1"])
-        toggleAppliance("Fan", "Fan 1");
-      if (Boolean(data.exhaust) !== applianceStatus.Exhaust["Exhaust 1"])
-        toggleAppliance("Exhaust", "Exhaust 1");
+
+      setApplianceStatus({
+        AC: { AC: Boolean(data.ac1) },
+        Fan: { "Fan 1": Boolean(data.efan) },
+        Exhaust: { "Exhaust 1": Boolean(data.exhaust) },
+        Blower: { "Blower 1": Boolean(data.blower) },
+      });
     } catch {
       setIsConnected(false);
     }
