@@ -66,7 +66,7 @@ const StatusCard = () => {
 
       {/* Energy Stats - Horizontally aligned */}
       <View style={styles.energyContainer}>
-        <Text style={styles.energySaved}>⚡ {wattSaved} watt saved</Text>
+        {/* <Text style={styles.energySaved}>⚡ {wattSaved} watt saved</Text> */}
         <View style={styles.spacer} />
         <Text style={styles.energyUsed}>⚡ {wattUsed} watt used</Text>
       </View>
@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#00AA00",
   },
-  spacer: {
-    width: 20,
-  },
+  // spacer: {
+  //   width: 20,
+  // },
   energyUsed: {
     fontSize: 14,
     fontWeight: "bold",

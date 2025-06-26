@@ -262,8 +262,6 @@ export default function Profile() {
         }}
       >
         {[
-          { label: "Settings", icon: "cog", route: "Settings" },
-          { label: "Details", icon: "credit-card", route: "BillingDetails" },
           {
             label: "Information",
             icon: "information-outline",
