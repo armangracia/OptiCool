@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "fb7cd162-519b-49f9-b114-d9b328acb22d"
+      }
+    },
+    "android": {
+      "package": "com.tigeryakuza.opticool"
+    }
+  }
+}

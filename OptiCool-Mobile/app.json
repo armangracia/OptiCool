@@ -7,10 +7,10 @@
       "expo-notifications"
     ],
     "orientation": "portrait",
-    "icon": "./assets/OptiCool_Logo.png",
+    "icon": "./assets/latest.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/OptiCool_Logo.png",
+      "image": "./assets/latest.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -22,10 +22,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/OptiCool_Logo.png",
+        "foregroundImage": "./assets/latest.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.airanicole.OptiCoolMobile"
+      "package": "com.armangracia.OptiCoolMobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
