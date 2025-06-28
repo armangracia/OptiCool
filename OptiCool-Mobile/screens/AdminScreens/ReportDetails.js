@@ -17,16 +17,13 @@ import io from "socket.io-client";
 const socket = io(baseUrl);
 
 const ReportDetails = () => {
-  // ──────────────────────────────── state ────────────────────────────────
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // pagination
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ───────────────────────────── effect: fetch ────────────────────────────
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -46,7 +43,6 @@ const ReportDetails = () => {
     fetchReports();
   }, []);
 
-  // ─────────────────────────── helpers ────────────────────────────
   const totalPages = Math.max(1, Math.ceil(reports.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedReports = reports.slice(startIndex, startIndex + itemsPerPage);
@@ -82,7 +78,6 @@ const ReportDetails = () => {
     }
   };
 
-  // ──────────────────────────────── ui ────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView

@@ -51,10 +51,14 @@ const MockupDashboard = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.pendingBanner}>
           <Text style={styles.pendingBannerText}>
-            ⚠️ Your account is pending approval. Contact the administrator for access.
+            ⚠️ Your account is pending approval. Contact the administrator for
+            access.
           </Text>
         </View>
 
@@ -71,7 +75,8 @@ const MockupDashboard = () => {
           >
             <Avatar.Image
               source={{
-                uri: user.avatar?.url || "https://example.com/default-avatar.png",
+                uri:
+                  user.avatar?.url || "https://example.com/default-avatar.png",
               }}
               size={40}
               style={styles.avatar}

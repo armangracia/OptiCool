@@ -1,7 +1,14 @@
-import React, { useRef } from 'react';
-import { View, StyleSheet, ImageBackground, Image, Animated, TouchableWithoutFeedback } from 'react-native';
-import { Button, Text } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native'; // Use this hook
+import React, { useRef } from "react";
+import {
+  View,
+  StyleSheet,
+  ImageBackground,
+  Image,
+  Animated,
+  TouchableWithoutFeedback,
+} from "react-native";
+import { Button, Text } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native"; // Use this hook
 
 export default function WelcomePage() {
   const navigation = useNavigation(); // Initialize navigation
@@ -25,15 +32,16 @@ export default function WelcomePage() {
 
   return (
     <ImageBackground
-      source={require('../../assets/opticool.png')}
+      source={require("../../assets/opticool.png")}
       style={styles.container}
     >
-      {/* Rounded box at the top */}
       <View style={styles.topBox}>
-        <Image
-          source={require('../../assets/elements1.png')}
-          style={styles.elementsImage}
-        />
+        <View style={styles.imageWrapper}>
+          <Image
+            source={require("../../assets/elements1.png")}
+            style={styles.elementsImage}
+          />
+        </View>
       </View>
 
       {/* Header text */}
@@ -46,12 +54,14 @@ export default function WelcomePage() {
       <View style={styles.buttonContainer}>
         <TouchableWithoutFeedback
           onPressIn={handlePressIn}
-          onPressOut={() => handlePressOut('Login')}
+          onPressOut={() => handlePressOut("Login")}
         >
-          <Animated.View style={[styles.button, { transform: [{ scale: scaleAnim }] }]}>
+          <Animated.View
+            style={[styles.button, { transform: [{ scale: scaleAnim }] }]}
+          >
             <Button
               mode="contained"
-              style={{ backgroundColor: 'white' }}
+              style={{ backgroundColor: "white" }}
               labelStyle={styles.buttonText}
             >
               Login
@@ -60,12 +70,14 @@ export default function WelcomePage() {
         </TouchableWithoutFeedback>
         <TouchableWithoutFeedback
           onPressIn={handlePressIn}
-          onPressOut={() => handlePressOut('Register')}
+          onPressOut={() => handlePressOut("Register")}
         >
-          <Animated.View style={[styles.button, { transform: [{ scale: scaleAnim }] }]}>
+          <Animated.View
+            style={[styles.button, { transform: [{ scale: scaleAnim }] }]}
+          >
             <Button
               mode="contained"
-              style={{ backgroundColor: 'white' }}
+              style={{ backgroundColor: "white" }}
               labelStyle={styles.buttonText}
             >
               Sign Up
@@ -80,45 +92,45 @@ export default function WelcomePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   topBox: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     marginLeft: -60,
-    left: '50%',
+    left: "50%",
     transform: [{ translateX: -100 }],
     width: 320,
     height: 420,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   elementsImage: {
     top: -30,
     width: 700,
     height: 330,
-    resizeMode: 'contain',
-    borderRadius: 75, // Increased borderRadius for more rounded corners
-    overflow: 'hidden',
+    resizeMode: "contain",
+    borderRadius: 100, // Increased borderRadius for more rounded corners
+    overflow: "hidden",
   },
   headerText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 330,
     marginBottom: 50,
-    color: '#050a20',
+    color: "#050a20",
   },
   thinText: {
-    fontWeight: '100',
+    fontWeight: "100",
   },
   boldText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 1,
   },
   button: {
@@ -126,7 +138,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   buttonText: {
-    color: '#8ca2ac',
+    color: "#8ca2ac",
     letterSpacing: 3,
   },
+  imageWrapper: {
+  width: 325,  
+  height: 325,
+  borderRadius: 30,
+  overflow: 'hidden',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 50,
+},
+elementsImage: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'cover', 
+},
 });
