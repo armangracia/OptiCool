@@ -3,33 +3,29 @@
     "name": "OptiCool",
     "slug": "opticool",
     "version": "1.0.0",
-    "plugins": [
-      "expo-notifications"
-    ],
     "orientation": "portrait",
-    "icon": "./assets/latest.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/latest.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.armangracia.OptiCoolMobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/latest.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.armangracia.OptiCoolMobile"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": ["expo-notifications"],
     "extra": {
       "eas": {
         "projectId": "fb7cd162-519b-49f9-b114-d9b328acb22d"
