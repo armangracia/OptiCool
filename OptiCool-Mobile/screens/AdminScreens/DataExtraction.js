@@ -13,6 +13,7 @@ import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
 import { useSelector } from "react-redux";
 import logActivity from "../../assets/common/logActivity";
+import SeedButton from "./SeedButton";
 
 const DataExtraction = () => {
   const startDate = "2024-08-01";
@@ -129,12 +130,12 @@ const DataExtraction = () => {
         outsideTemperature: formattedData,
       });
 
-        await logActivity({
+      await logActivity({
         userId: user._id,
         action: "Extracted Outside Temperature data",
         token,
       });
-      
+
       Alert.alert("Success", "Outside temperature data saved.");
     } catch (error) {
       console.error("Outside temperature error:", error.message);
@@ -177,6 +178,9 @@ const DataExtraction = () => {
           onPress={handlePowerData}
           image={require("../../assets/powerextract.png")}
         />
+        <View style={styles.seedButtonWrapper}>
+          <SeedButton />
+        </View>
       </ScrollView>
     </View>
   );
@@ -272,6 +276,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 12,
     fontWeight: "bold",
+  },
+  seedButtonWrapper: {
+    marginTop: 30,
+    alignItems: "center",
   },
 });
 
