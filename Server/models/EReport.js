@@ -5,13 +5,23 @@ const ereportSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    status: {
+    description: {
         type: String,
         required: true,
     },
+    status: {
+        type: String,
+        enum: ['active', 'inactive'],
+        required: true,
+    },
+    isResolved: {
+        type: String,
+        enum: ['yes', 'no'],
+        default: 'no',
+    },
     reportDate: {
         type: Date,
-        default: Date.now,  // Automatically set the report date
+        default: Date.now,
     },
     timeReported: {
         type: String,
@@ -19,7 +29,7 @@ const ereportSchema = new mongoose.Schema({
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',  // Store only user ID and populate dynamically
+        ref: 'User',
         required: true,
     },
 });
