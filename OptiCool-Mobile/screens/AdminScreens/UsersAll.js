@@ -123,73 +123,70 @@ const UsersRoute = ({
   );
 };
 
+const TrashUsersRoute = ({
+  trashUsers,
+  page,
+  itemsPerPage,
+  setPage,
+  restoreUser,
+}) => {
+  const paginatedTrash = trashUsers.slice(
+    page * itemsPerPage,
+    (page + 1) * itemsPerPage
+  );
+  const totalPages = Math.ceil(trashUsers.length / itemsPerPage);
 
- const TrashUsersRoute = ({
-    trashUsers,
-    page,
-    itemsPerPage,
-    setPage,
-    restoreUser,
-  }) => {
-    const paginatedTrash = trashUsers.slice(
-      page * itemsPerPage,
-      (page + 1) * itemsPerPage
-    );
-    const totalPages = Math.ceil(trashUsers.length / itemsPerPage);
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Trash</Text>
+        {paginatedTrash.map((user) => (
+          <Card key={user._id} style={styles.card}>
+            <Card.Content style={styles.cardContent}>
+              <Text style={styles.label}>Name:</Text>
+              <Text style={styles.value}>{user.username}</Text>
+              <Text style={styles.label}>Email:</Text>
+              <Text style={styles.value}>{user.email}</Text>
+              <Text style={styles.label}>Deleted At:</Text>
+              <Text style={styles.value}>
+                {user.deletedAt
+                  ? new Date(user.deletedAt).toLocaleString()
+                  : "—"}
+              </Text>
 
-    return (
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
+              <View style={styles.actions}>
+                <Button
+                  icon="undo"
+                  mode="contained"
+                  buttonColor="#4caf50"
+                  textColor="white"
+                  onPress={() => restoreUser(user._id)}
+                >
+                  Restore
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+      </ScrollView>
+
+      <View style={styles.paginationFixed}>
+        <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
+          Previous
+        </Button>
+        <Text>
+          Page {page + 1} of {totalPages}
+        </Text>
+        <Button
+          disabled={page + 1 >= totalPages}
+          onPress={() => setPage(page + 1)}
         >
-          <Text style={styles.title}>Trash</Text>
-          {paginatedTrash.map((user) => (
-            <Card key={user._id} style={styles.card}>
-              <Card.Content style={styles.cardContent}>
-                <Text style={styles.label}>Name:</Text>
-                <Text style={styles.value}>{user.username}</Text>
-                <Text style={styles.label}>Email:</Text>
-                <Text style={styles.value}>{user.email}</Text>
-                <Text style={styles.label}>Deleted At:</Text>
-                <Text style={styles.value}>
-                  {new Date(user.deletedAt).toLocaleString()}
-                </Text>
-
-                <View style={styles.actions}>
-                  <Button
-                    icon="undo"
-                    mode="contained"
-                    buttonColor="#4caf50"
-                    textColor="white"
-                    onPress={() => restoreUser(user._id)}
-                  >
-                    Restore
-                  </Button>
-                </View>
-              </Card.Content>
-            </Card>
-          ))}
-        </ScrollView>
-
-        <View style={styles.paginationFixed}>
-          <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
-            Previous
-          </Button>
-          <Text>
-            Page {page + 1} of {totalPages}
-          </Text>
-          <Button
-            disabled={page + 1 >= totalPages}
-            onPress={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
-        </View>
+          Next
+        </Button>
       </View>
-    );
-  };
-
+    </View>
+  );
+};
 
 const PendingUsersRoute = ({
   pendingUsers,
@@ -197,13 +194,13 @@ const PendingUsersRoute = ({
   itemsPerPage,
   setPage,
   approveUser,
+  handleDecline,
 }) => {
   const paginatedPending = pendingUsers.slice(
     page * itemsPerPage,
     (page + 1) * itemsPerPage
   );
   const totalPages = Math.ceil(pendingUsers.length / itemsPerPage);
-
 
   return (
     <View style={{ flex: 1 }}>
@@ -229,7 +226,7 @@ const PendingUsersRoute = ({
                 <Button
                   mode="outlined"
                   textColor="red"
-                  onPress={() => approveUser(user._id, false)}
+                  onPress={() => handleDecline(user._id)}
                 >
                   Decline
                 </Button>
@@ -438,6 +435,17 @@ export default function UsersAll() {
     }, [])
   );
 
+  const handleDecline = (id) => {
+    Alert.alert(
+      "Decline User",
+      "This will remove the account and move it to Trash. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", onPress: () => softDeleteUser(id) }, // reuse existing helper
+      ]
+    );
+  };
+
   const renderScene = BottomNavigation.SceneMap({
     users: () => (
       <UsersRoute
@@ -456,6 +464,7 @@ export default function UsersAll() {
         itemsPerPage={itemsPerPage}
         setPage={setPagePending}
         approveUser={approveUser}
+        handleDecline={handleDecline}
       />
     ),
     trash: () => (

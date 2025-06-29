@@ -214,8 +214,8 @@ exports.softDeleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { isDeleted: true },
-      { new: true }
+      { isDeleted: true, deletedAt: Date.now() },
+      { new: true, runValidators: true }
     );
 
     if (!user) {
@@ -238,7 +238,11 @@ exports.restoreUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { isDeleted: false },
+      {
+        isDeleted: false,
+        deletedAt: null,
+        isApproved: false, 
+      },
       { new: true }
     );
 
@@ -308,11 +312,9 @@ exports.approveUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res
-      .status(200)
-      .json({
-        message: `User ${isApproved ? "approved" : "declined"} successfully.`,
-      });
+    res.status(200).json({
+      message: `User ${isApproved ? "approved" : "declined"} successfully.`,
+    });
   } catch (error) {
     console.error("Approve user error:", error);
     res.status(500).json({ message: "Failed to update user status." });
