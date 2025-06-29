@@ -171,4 +171,12 @@ userSchema.methods.verifyCode = async function (inputtedCode) {
   return "success";
 };
 
+userSchema.index(
+  { deletedAt: 1 },
+  {
+    expireAfterSeconds: 60 * 60 * 24 * 30, 
+    partialFilterExpression: { isDeleted: true }, 
+  }
+);
+
 module.exports = mongoose.model("User", userSchema);

@@ -26,6 +26,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: "#2d3e50",
   },
+  trashtitle: {
+    marginTop: 5,
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 16,
+    color: "#2d3e50",
+  },
   card: {
     marginBottom: 12,
     borderRadius: 10,
@@ -138,8 +145,24 @@ const TrashUsersRoute = ({
 
   return (
     <View style={{ flex: 1 }}>
+      <View
+        style={{
+          backgroundColor: "#fff4e5",
+          padding: 10,
+          borderRadius: 6,
+          margin: 16,
+          marginBottom: 0,
+          marginTop: 50,
+        }}
+      >
+        <Text
+          style={{ color: "#c2410c", fontWeight: "bold", textAlign: "center" }}
+        >
+          Accounts in Trash are permanently deleted after 30 days.
+        </Text>
+      </View>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Trash</Text>
+        <Text style={styles.trashtitle}>Trash</Text>
         {paginatedTrash.map((user) => (
           <Card key={user._id} style={styles.card}>
             <Card.Content style={styles.cardContent}>
