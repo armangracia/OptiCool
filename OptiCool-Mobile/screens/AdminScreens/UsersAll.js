@@ -123,6 +123,74 @@ const UsersRoute = ({
   );
 };
 
+
+ const TrashUsersRoute = ({
+    trashUsers,
+    page,
+    itemsPerPage,
+    setPage,
+    restoreUser,
+  }) => {
+    const paginatedTrash = trashUsers.slice(
+      page * itemsPerPage,
+      (page + 1) * itemsPerPage
+    );
+    const totalPages = Math.ceil(trashUsers.length / itemsPerPage);
+
+    return (
+      <View style={{ flex: 1 }}>
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>Trash</Text>
+          {paginatedTrash.map((user) => (
+            <Card key={user._id} style={styles.card}>
+              <Card.Content style={styles.cardContent}>
+                <Text style={styles.label}>Name:</Text>
+                <Text style={styles.value}>{user.username}</Text>
+                <Text style={styles.label}>Email:</Text>
+                <Text style={styles.value}>{user.email}</Text>
+                <Text style={styles.label}>Deleted At:</Text>
+                <Text style={styles.value}>
+                  {new Date(user.deletedAt).toLocaleString()}
+                </Text>
+
+                <View style={styles.actions}>
+                  <Button
+                    icon="undo"
+                    mode="contained"
+                    buttonColor="#4caf50"
+                    textColor="white"
+                    onPress={() => restoreUser(user._id)}
+                  >
+                    Restore
+                  </Button>
+                </View>
+              </Card.Content>
+            </Card>
+          ))}
+        </ScrollView>
+
+        <View style={styles.paginationFixed}>
+          <Button disabled={page === 0} onPress={() => setPage(page - 1)}>
+            Previous
+          </Button>
+          <Text>
+            Page {page + 1} of {totalPages}
+          </Text>
+          <Button
+            disabled={page + 1 >= totalPages}
+            onPress={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </View>
+      </View>
+    );
+  };
+
+
 const PendingUsersRoute = ({
   pendingUsers,
   page,
@@ -136,10 +204,10 @@ const PendingUsersRoute = ({
   );
   const totalPages = Math.ceil(pendingUsers.length / itemsPerPage);
 
+
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}
-      showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Pending Users</Text>
         {paginatedPending.map((user) => (
           <Card key={user._id} style={styles.card}>
@@ -197,10 +265,14 @@ export default function UsersAll() {
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage] = useState(numberOfItemsPerPageList[0]);
   const [index, setIndex] = useState(0);
+  const [trashUsers, setTrashUsers] = useState([]);
+  const [pageTrash, setPageTrash] = useState(0);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   const [routes] = useState([
     { key: "users", icon: "users" },
     { key: "pending", icon: "clock-o" },
+    { key: "trash", icon: "trash" },
   ]);
 
   const { token, user } = useSelector((state) => state.auth);
@@ -210,8 +282,17 @@ export default function UsersAll() {
       const { data } = await axios.get(`${baseURL}/users/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(data.users.filter((u) => u.isApproved));
-      setPendingUsers(data.users.filter((u) => !u.isApproved));
+
+      setUsers(data.users.filter((u) => u.isApproved && !u.isDeleted));
+      setPendingUsers(data.users.filter((u) => !u.isApproved && !u.isDeleted));
+      setBadgeCount(
+        data.users.filter((u) => !u.isApproved && !u.isDeleted).length
+      );
+
+      const trashRes = await axios.get(`${baseURL}/users/deleted`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTrashUsers(trashRes.data.users);
     } catch (error) {
       console.error(error);
       Alert.alert("Error", "Failed to fetch users.");
@@ -287,11 +368,11 @@ export default function UsersAll() {
 
   const handleDelete = (id) => {
     Alert.alert(
-      "Confirm Deletion",
-      "Are you sure you want to delete this user?",
+      "Move to Trash",
+      "Are you sure you want to move this user to trash?",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Yes", onPress: () => deleteUser(id) },
+        { text: "Yes", onPress: () => softDeleteUser(id) },
       ]
     );
   };
@@ -304,6 +385,53 @@ export default function UsersAll() {
     ]);
   };
 
+  const softDeleteUser = async (id) => {
+    try {
+      await axios.put(
+        `${baseURL}/users/soft-delete/${id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      await logActivity({
+        userId: user._id,
+        action: `Soft deleted user with ID: ${id}`,
+        token,
+      });
+
+      Alert.alert("User deleted", "User was moved to trash.");
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to soft delete user.");
+    }
+  };
+
+  const restoreUser = async (id) => {
+    try {
+      await axios.put(
+        `${baseURL}/users/restore/${id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      await logActivity({
+        userId: user._id,
+        action: `Restored user with ID: ${id}`,
+        token,
+      });
+
+      Alert.alert("User restored", "User has been restored.");
+      fetchUsers();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to restore user.");
+    }
+  };
   useFocusEffect(
     useCallback(() => {
       fetchUsers();
@@ -330,6 +458,15 @@ export default function UsersAll() {
         approveUser={approveUser}
       />
     ),
+    trash: () => (
+      <TrashUsersRoute
+        trashUsers={trashUsers}
+        page={pageTrash}
+        itemsPerPage={itemsPerPage}
+        setPage={setPageTrash}
+        restoreUser={restoreUser}
+      />
+    ),
   });
 
   return (
@@ -346,9 +483,35 @@ export default function UsersAll() {
         height: 68,
         elevation: 8,
       }}
-      renderIcon={({ route, color }) => (
-        <Icon name={route.icon} size={24} color={color} />
-      )}
+      renderIcon={({ route, color }) => {
+        if (route.key === "pending") {
+          return (
+            <View>
+              <Icon name={route.icon} size={24} color={color} />
+              {badgeCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    right: -6,
+                    top: -3,
+                    backgroundColor: "red",
+                    borderRadius: 8,
+                    width: 16,
+                    height: 16,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "white", fontSize: 10 }}>
+                    {badgeCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        }
+        return <Icon name={route.icon} size={24} color={color} />;
+      }}
     />
   );
 }

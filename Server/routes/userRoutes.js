@@ -27,6 +27,13 @@ router.get('/active', userController.getActiveUsers);
 
 router.put("/approve/:id", userController.approveUser);
 
+router.put('/soft-delete/:id', isAuthenticated, userController.softDeleteUser);
+
+router.put('/restore/:id', isAuthenticated, userController.restoreUser);
+
+router.get('/deleted', isAuthenticated, userController.getDeletedUsers);
+
+
 // Add the new route for fetching the number of users
 // router.get('/users/number', userController.getNumberOfUsers);
 

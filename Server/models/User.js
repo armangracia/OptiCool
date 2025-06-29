@@ -49,10 +49,18 @@ const userSchema = new mongoose.Schema(
     resetPasswordToken: String,
     resetPasswordExpire: Date,
 
-    // Add the 'isActive' field here
     isActive: {
       type: Boolean,
-      default: false, // Defaults to false for new users
+      default: false,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
