@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
 import baseURL from '../../assets/common/baseUrl';
@@ -15,6 +16,7 @@ const ActiveUsers = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   const fetchActiveUsers = async () => {
     try {
@@ -38,24 +40,48 @@ const ActiveUsers = () => {
     fetchActiveUsers();
   };
 
-  const renderUserItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.userInfo}>
-        <Text style={styles.username}>{item.username}</Text>
-        <Text style={styles.email}>{item.email}</Text>
-      </View>
-      <View
-        style={[
-          styles.statusBadge,
-          item.isActive ? styles.onlineBadge : styles.offlineBadge,
-        ]}
-      >
-        <Text style={styles.badgeText}>
-          {item.isActive ? 'Online' : 'Offline'}
-        </Text>
-      </View>
-    </View>
-  );
+  const renderUserItem = ({ item }) => {
+    const isExpanded = selectedUserId === item._id;
+
+    return (
+      <TouchableOpacity onPress={() => setSelectedUserId(isExpanded ? null : item._id)}>
+        <View style={styles.card}>
+          <View style={styles.userInfo}>
+            <Text style={styles.username}>{item.username}</Text>
+            <Text style={styles.email}>{item.email}</Text>
+          </View>
+          <View
+            style={[
+              styles.statusBadge,
+              item.isActive ? styles.onlineBadge : styles.offlineBadge,
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {item.isActive ? 'Online' : 'Offline'}
+            </Text>
+          </View>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.detailsSection}>
+            <Text style={styles.detailLabel}>Assigned Room:</Text>
+            <Text style={styles.detailValue}>{item.room || 'No room assigned'}</Text>
+
+            <Text style={[styles.detailLabel, { marginTop: 8 }]}>Usage Dates:</Text>
+            {item.usageDates && item.usageDates.length > 0 ? (
+              item.usageDates.map((date, index) => (
+                <Text key={index} style={styles.detailValue}>
+                  • {new Date(date).toLocaleDateString()}
+                </Text>
+              ))
+            ) : (
+              <Text style={styles.detailValue}>No usage recorded</Text>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -77,7 +103,8 @@ const ActiveUsers = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Active Users</Text>
-      <FlatList showsVerticalScrollIndicator={false}
+      <FlatList
+        showsVerticalScrollIndicator={false}
         data={users}
         keyExtractor={(item) => item._id.toString()}
         renderItem={renderUserItem}
@@ -155,6 +182,23 @@ const styles = StyleSheet.create({
   error: {
     fontSize: 16,
     color: 'red',
+  },
+  detailsSection: {
+    backgroundColor: '#e2e8f0',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+    marginHorizontal: 4,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#334155',
+    marginTop: 2,
   },
 });
 
