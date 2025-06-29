@@ -81,3 +81,45 @@ exports.getNumberOfReports = async (req, res) => {
         });
     }
 };
+
+
+exports.resolveReport = async (req, res) => {
+    try {
+        const report = await Report.findByIdAndUpdate(
+            req.params.id,
+            { isResolved: "yes" },
+            { new: true }
+        );
+
+        if (!report) {
+            return res.status(404).json({ message: 'Report not found.' });
+        }
+
+        return res.status(200).json({ success: true, report });
+    } catch (err) {
+        console.error("Error resolving report:", err.message);
+        return res.status(500).json({ message: 'Server error while resolving report.' });
+    }
+};
+
+
+exports.restoreReport = async (req, res) => {
+  try {
+    const reportId = req.params.id;
+
+    const updated = await Report.findByIdAndUpdate(
+      reportId,
+      { isResolved: "no" },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    return res.status(200).json({ success: true, message: "Report status restored", report: updated });
+  } catch (err) {
+    console.error("Restore error:", err.message);
+    return res.status(500).json({ success: false, message: "Server error restoring status" });
+  }
+};

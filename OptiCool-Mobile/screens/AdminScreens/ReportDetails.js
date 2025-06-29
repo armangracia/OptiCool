@@ -20,26 +20,27 @@ const ReportDetails = () => {
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [visibleMenuIndex, setVisibleMenuIndex] = useState(null);
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 6;
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const res = await axios.get(`${baseUrl}/ereports/getreport`, {
-          params: { populate: "user" },
-        });
-        const sorted = res.data.reports.sort(
-          (a, b) => new Date(b.reportDate) - new Date(a.reportDate)
-        );
-        setReports(sorted);
-        setCurrentPage(1); // reset page on refresh
-      } catch (err) {
-        console.error("Error fetching reports:", err);
-      }
-    };
+  const fetchReports = async () => {
+    try {
+      const res = await axios.get(`${baseUrl}/ereports/getreport`, {
+        params: { populate: "user" },
+      });
+      const sorted = res.data.reports.sort(
+        (a, b) => new Date(b.reportDate) - new Date(a.reportDate)
+      );
+      setReports(sorted);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error("Error fetching reports:", err);
+    }
+  };
 
+  useEffect(() => {
     fetchReports();
   }, []);
 
@@ -59,22 +60,30 @@ const ReportDetails = () => {
 
   const handleSolveReport = async () => {
     try {
+      await axios.put(`${baseUrl}/ereports/${selectedReport._id}/resolve`);
+
       socket.emit("reportSolved", {
         userId: selectedReport.user._id,
         message: `Your report for ${selectedReport.appliance} has been marked as solved.`,
       });
 
-      Alert.alert(
-        "Report Solved",
-        "The report has been marked as solved and the user has been notified."
-      );
+      Alert.alert("Resolved", "Report marked as resolved.");
+      fetchReports();
       closeModal();
     } catch (err) {
       console.error("Error solving report:", err);
-      Alert.alert(
-        "Error",
-        "There was an error marking the report as solved. Please try again."
-      );
+      Alert.alert("Error", "Failed to resolve the report.");
+    }
+  };
+
+  const handleRestoreReport = async () => {
+    try {
+      await axios.put(`${baseUrl}/ereports/${selectedReport._id}/restore`);
+      Alert.alert("Restored", "Report status has been restored.");
+      fetchReports();
+    } catch (err) {
+      console.error("Error restoring report:", err);
+      Alert.alert("Error", "Failed to restore the report.");
     }
   };
 
@@ -82,40 +91,110 @@ const ReportDetails = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.listContainer}>
-          {/* column headers */}
-          <View style={[styles.listItem, styles.headerRow]}>
-            <Text style={[styles.listText, styles.headerColumn, { flex: 1 }]}>
-              Appliance
-            </Text>
-            <Text style={[styles.listText, styles.headerColumn, { flex: 1 }]}>
-              Status
-            </Text>
-            <Text style={[styles.listText, styles.headerColumn, { flex: 1 }]}>
-              Details
-            </Text>
-          </View>
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.header}>Reports</Text>
+        <View style={styles.cardListContainer}>
+          {paginatedReports.map((report, index) => (
+            <View key={index} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{report.appliance}</Text>
+                <View style={{ position: "relative" }}>
+                  <TouchableOpacity onPress={() => setVisibleMenuIndex(index)}>
+                    <MaterialIcons name="more-vert" size={20} color="#888" />
+                  </TouchableOpacity>
 
-          {/* data rows */}
-          {paginatedReports.map((report, idx) => (
-            <View key={idx} style={styles.listItem}>
-              <Text style={[styles.listText, { flex: 1 }]}>
-                {report.appliance}
-              </Text>
-              <Text style={[styles.listText, { flex: 1 }]}>
-                {report.status}
-              </Text>
-              <TouchableOpacity
-                style={styles.moreDetailsButton}
-                onPress={() => handleMoreDetails(report)}
-              >
-                <MaterialIcons name="info" size={24} color="blue" />
-              </TouchableOpacity>
+                  {visibleMenuIndex === index && (
+                    <View style={styles.dropdownMenu}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setVisibleMenuIndex(null);
+                          handleMoreDetails(report);
+                        }}
+                      >
+                        <Text style={styles.menuItem}>View Details</Text>
+                      </TouchableOpacity>
+
+                      {report.isResolved === "no" ? (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedReport(report);
+                            setVisibleMenuIndex(null);
+                            setModalVisible(true);
+                          }}
+                        >
+                          <Text style={styles.menuItem}>Mark as Resolved</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => {
+                            setSelectedReport(report);
+                            setVisibleMenuIndex(null);
+                            handleRestoreReport();
+                          }}
+                        >
+                          <Text style={styles.menuItem}>Restore Status</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Status:</Text>
+                <Text style={styles.cardValue}>{report.status}</Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Description:</Text>
+                <Text style={styles.cardValue}>{report.description}</Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Report Date:</Text>
+                <Text style={styles.cardValue}>
+                  {new Date(report.reportDate).toLocaleDateString()}
+                </Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Time:</Text>
+                <Text style={styles.cardValue}>{report.timeReported}</Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Reported By:</Text>
+                <Text style={styles.cardValue}>
+                  {report.user?.username || "Unknown"}
+                </Text>
+              </View>
+
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Resolved:</Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    report.isResolved === "yes"
+                      ? styles.resolvedBadge
+                      : styles.pendingBadge,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      report.isResolved === "yes"
+                        ? { color: "#219653" }
+                        : { color: "#2F80ED" },
+                    ]}
+                  >
+                    {report.isResolved === "yes" ? "Resolved" : "Pending"}
+                  </Text>
+                </View>
+              </View>
             </View>
           ))}
 
-          {/* pagination controls */}
           <View style={styles.paginationContainer}>
             <TouchableOpacity
               style={[
@@ -138,7 +217,9 @@ const ReportDetails = () => {
                 currentPage === totalPages && styles.disabledButton,
               ]}
               disabled={currentPage === totalPages}
-              onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+              onPress={() =>
+                setCurrentPage((p) => Math.min(p + 1, totalPages))
+              }
             >
               <MaterialIcons name="arrow-forward-ios" size={20} color="#fff" />
             </TouchableOpacity>
@@ -146,35 +227,27 @@ const ReportDetails = () => {
         </View>
       </ScrollView>
 
-      {/* modal */}
       {selectedReport && (
         <Modal transparent visible={modalVisible} onRequestClose={closeModal}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Report Details</Text>
+              <Text style={styles.modalTitle}>Resolve Report</Text>
               <Text style={styles.modalText}>
-                Date Reported:{" "}
-                {new Date(selectedReport.reportDate).toLocaleDateString()}
+                Appliance: {selectedReport.appliance}
               </Text>
               <Text style={styles.modalText}>
-                Time Reported: {selectedReport.timeReported}
-              </Text>
-              <Text style={styles.modalText}>
-                Reported By:{" "}
-                {selectedReport.user
-                  ? `${selectedReport.user.username} - ${selectedReport.user.email}`
-                  : "Unknown"}
+                Are you sure you want to mark this report as resolved?
               </Text>
 
               <TouchableOpacity
                 style={styles.solveButton}
                 onPress={handleSolveReport}
               >
-                <Text style={styles.solveButtonText}>Mark as Solved</Text>
+                <Text style={styles.solveButtonText}>Confirm</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={styles.closeButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -188,58 +261,85 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ebedf0",
-    justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
   },
   scrollContainer: {
     padding: 20,
     flexGrow: 1,
+    paddingBottom: 120,
   },
-  listContainer: {
-    backgroundColor: "#ffffff",
-    padding: 15,
-    borderRadius: 8,
-    width: "100%",
-    minWidth: 300,
-    maxWidth: 1000,
-    elevation: 3,
-    marginTop: -20,
-    marginBottom: 100,
-  },
-  headerRow: {
-    backgroundColor: "#ffffff",
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: "#B0BEC5",
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-  },
-  listText: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 16,
-    color: "#000",
-  },
-  headerColumn: {
+  header: {
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#263238",
+    marginBottom: 15,
+    alignSelf: "flex-start",
+    color: "#333",
   },
-  moreDetailsButton: {
-    flex: 1,
+  cardListContainer: {
+    width: "100%",
     alignItems: "center",
   },
-  // pagination
-  paginationContainer: {
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+    width: 300,
+  },
+  cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  cardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  cardLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+    width: 110,
+  },
+  cardValue: {
+    fontSize: 14,
+    color: "#111",
+    flex: 1,
+    textAlign: "right",
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: "flex-end",
+  },
+  resolvedBadge: {
+    backgroundColor: "#BBF7D0",
+  },
+  pendingBadge: {
+    backgroundColor: "#E0ECFF",
+  },
+  statusBadgeText: {
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 20,
   },
   pageButton: {
     backgroundColor: "#2F80ED",
@@ -255,7 +355,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
-  // modal
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -277,9 +376,10 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     marginBottom: 10,
+    textAlign: "center",
   },
   solveButton: {
-    marginTop: 20,
+    marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
     backgroundColor: "green",
@@ -293,12 +393,29 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: "blue",
+    backgroundColor: "gray",
     borderRadius: 5,
   },
   closeButtonText: {
     color: "#fff",
     fontSize: 16,
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 25,
+    right: 0,
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    elevation: 5,
+    paddingVertical: 6,
+    width: 160,
+    zIndex: 999,
+  },
+  menuItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: "#333",
   },
 });
 
