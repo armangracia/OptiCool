@@ -1,242 +1,228 @@
-import React from "react";
-import { View, Text, Switch, StyleSheet, Image, Alert } from "react-native";
-import dmt3API from "../../services/dmt3API";
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  Switch,
+  StyleSheet,
+  Image,
+  Alert,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { ActivityIndicator } from "react-native-paper";
-import logActivity from "../../assets/common/logActivity";
 import { useSelector } from "react-redux";
+import dmt3API from "../../services/dmt3API";
+import logActivity from "../../assets/common/logActivity";
 
-const AppliancesScreen = () => {
+
+const TOGGLE_LIMIT = 5; 
+const WINDOW_MS = 10_000; 
+const COOLDOWN_MS = 30_000; 
+
+export default function AppliancesScreen() {
   const { user, token } = useSelector((state) => state.auth);
-  const [isLightOn, setLightOn] = React.useState(false);
-  const [isFanOn, setFanOn] = React.useState(false);
-  const [isExhaustInwardsOn, setExhaustInwardsOn] = React.useState(false);
-  const [isExhaustOutwardsOn, setExhaustOutwardsOn] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
 
-  const getCardStyle = (isOn) => ({
+  const [isACOn, setIsACOn] = useState(false);
+  const [isFanOn, setIsFanOn] = useState(false);
+  const [isExhInOn, setIsExhInOn] = useState(false);
+  const [isExhOutOn, setIsExhOutOn] = useState(false);
+
+  const [lockAC, setLockAC] = useState(false);
+  const [lockFan, setLockFan] = useState(false);
+  const [lockIn, setLockIn] = useState(false);
+  const [lockOut, setLockOut] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+
+  const historyRef = useRef({
+    AC: [],
+    Fan: [],
+    ExhIn: [],
+    ExhOut: [],
+  });
+
+  const recordToggle = (key, setLock) => {
+    const now = Date.now();
+    const arr = historyRef.current[key];
+    historyRef.current[key] = arr.filter((t) => now - t < WINDOW_MS);
+    historyRef.current[key].push(now);
+
+    if (historyRef.current[key].length > TOGGLE_LIMIT && !lockAC) {
+      setLock(true);
+      setTimeout(() => {
+        setLock(false);
+        historyRef.current[key] = [];
+      }, COOLDOWN_MS);
+    }
+  };
+
+  const makeHandler =
+    (apiOn, apiOff, setState, key, setLock) => async (value) => {
+      if (setLock === true) return; 
+
+      recordToggle(key, setLock);
+      if (setLock === true) return; 
+
+      setLoading(true);
+      try {
+        if (value) await apiOn();
+        else await apiOff();
+
+        await logActivity({
+          userId: user._id,
+          action: `Turned ${value ? "on" : "off"} ${key}`,
+          token,
+        });
+
+        setState(value);
+      } catch (err) {
+        Alert.alert("No running system", "Not connected to the system");
+        console.error(err);
+      }
+      setLoading(false);
+    };
+
+  const onToggleAC = makeHandler(
+    dmt3API.turnOnAllAC,
+    dmt3API.turnOffAllAC,
+    setIsACOn,
+    "AC",
+    setLockAC
+  );
+  const onToggleFan = makeHandler(
+    dmt3API.turnOnEFans,
+    dmt3API.turnOffEFans,
+    setIsFanOn,
+    "Fan",
+    setLockFan
+  );
+  const onToggleIn = makeHandler(
+    dmt3API.turnOnBlower,
+    dmt3API.turnOffBlower,
+    setIsExhInOn,
+    "Exhaust In",
+    setLockIn
+  );
+  const onToggleOut = makeHandler(
+    dmt3API.turnOnExhaust,
+    dmt3API.turnOffExhaust,
+    setIsExhOutOn,
+    "Exhaust Out",
+    setLockOut
+  );
+
+  const cardStyle = (on, locked) => ({
     ...styles.card,
-    backgroundColor: isOn ? "#000" : "#fff",
+    opacity: locked ? 0.4 : 1,
+    backgroundColor: on ? "#000" : "#fff",
   });
 
-  const getTextStyle = (isOn) => ({
+  const textStyle = (on) => ({
     ...styles.cardText,
-    color: isOn ? "#fff" : "#000",
+    color: on ? "#fff" : "#000",
   });
 
-  const getSmallTextStyle = (isOn) => ({
-    ...styles.smallCardText,
-    color: isOn ? "#fff" : "#000",
-  });
-
-  const getImageStyle = (isOn) => ({
+  const imgStyle = (on) => ({
     ...styles.cardImage,
-    tintColor: isOn ? "#fff" : "#000",
+    tintColor: on ? "#fff" : "#000",
   });
 
-  const resetAll = () => {
-    setFanOn(false);
-    setExhaustInwardsOn(false);
-    setExhaustOutwardsOn(false);
-    setLightOn(false);
-  };
-
-  const handleAC = async (status) => {
-    setLoading(true);
-    try {
-      if (status) {
-        await dmt3API.turnOnAllAC();
-      } else {
-        await dmt3API.turnOffAllAC();
-      }
-
-      
-      await logActivity({
-        userId: user._id,
-        action: `Turned ${status ? "on" : "off"} Aircon`,
-        token,
-      });
-    } catch (err) {
-      Alert.alert("No running system", "Not connected to the system");
-      console.log(err);
-      resetAll();
-    }
-    setLoading(false);
-  };
-
-  const handleFans = async (status) => {
-    setLoading(true);
-    try {
-      if (status) {
-        await dmt3API.turnOnEFans();
-      } else {
-        await dmt3API.turnOffEFans();
-      }
-
-        // 🔥 Log activity here
-    await logActivity({
-      userId: user._id,
-      action: `Turned ${status ? "on" : "off"} Fans`,
-      token,
-    });
-
-    } catch (err) {
-      Alert.alert("No running system", "Not connected to the system");
-      console.log(err);
-      resetAll();
-    }
-    setLoading(false);
-  };
-
-  const handleBlower = async (status) => {
-    setLoading(true);
-    try {
-      if (status) {
-        await dmt3API.turnOnBlower();
-      } else {
-        await dmt3API.turnOffBlower();
-      }
-
-       
-    await logActivity({
-      userId: user._id,
-      action: `Turned ${status ? "on" : "off"} Blower`,
-      token,
-    });
-
-    } catch (err) {
-      Alert.alert("No running system", "Not connected to the system");
-      console.log(err);
-      resetAll();
-    }
-    setLoading(false);
-  };
-
-  const handleExhaust = async (status) => {
-    setLoading(true);
-    try {
-      if (status) {
-        await dmt3API.turnOnExhaust();
-      } else {
-        await dmt3API.turnOffExhaust();
-      }
-
-        // 🔥 Log activity here
-    await logActivity({
-      userId: user._id,
-      action: `Turned ${status ? "on" : "off"} Exhaust`,
-      token,
-    });
-
-    } catch (err) {
-      console.log(err);
-      Alert.alert("No running system", "Not connected to the system");
-      resetAll();
-    }
-    setLoading(false);
-  };
+  const Guard = ({ locked, children }) =>
+    locked ? (
+      <TouchableWithoutFeedback>{children}</TouchableWithoutFeedback>
+    ) : (
+      children
+    );
 
   return (
-    <View style={[styles.container]} pointerEvents={loading ? "none" : "auto"}>
+    <View style={styles.container} pointerEvents={loading ? "none" : "auto"}>
       <View style={styles.row}>
-        <View style={getCardStyle(isLightOn)}>
-          <Image
-            source={require("../../assets/air-conditioner.png")} // Add your image path here
-            style={getImageStyle(isLightOn)}
-          />
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={getTextStyle(isLightOn)}>Aircon</Text>
-            <Switch
-              value={isLightOn}
-              onValueChange={(value) => {
-                setLightOn((prev) => !prev);
-                handleAC(value);
-              }}
-              style={styles.switch}
+        <Guard locked={lockAC}>
+          <View style={cardStyle(isACOn, lockAC)}>
+            <Image
+              source={require("../../assets/air-conditioner.png")}
+              style={imgStyle(isACOn)}
             />
+            <View style={styles.labelRow}>
+              <Text style={textStyle(isACOn)}>Aircon</Text>
+              <Switch
+                value={isACOn}
+                onValueChange={onToggleAC}
+                disabled={lockAC}
+                style={styles.switch}
+              />
+            </View>
           </View>
-        </View>
+        </Guard>
 
-        <View style={getCardStyle(isFanOn)}>
-          <Image
-            source={require("../../assets/fan.png")} // Add your image path here
-            style={getImageStyle(isFanOn)}
-          />
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={getTextStyle(isFanOn)}>Fan</Text>
-            <Switch
-              value={isFanOn}
-              onValueChange={(value) => {
-                setFanOn((prev) => !prev);
-                handleFans(value);
-              }}
-              style={styles.switch}
+        <Guard locked={lockFan}>
+          <View style={cardStyle(isFanOn, lockFan)}>
+            <Image
+              source={require("../../assets/fan.png")}
+              style={imgStyle(isFanOn)}
             />
+            <View style={styles.labelRow}>
+              <Text style={textStyle(isFanOn)}>Fan</Text>
+              <Switch
+                value={isFanOn}
+                onValueChange={onToggleFan}
+                disabled={lockFan}
+                style={styles.switch}
+              />
+            </View>
           </View>
-        </View>
+        </Guard>
       </View>
 
       <View style={styles.row}>
-        <View style={getCardStyle(isExhaustInwardsOn)}>
-          <Image
-            source={require("../../assets/fan.png")} // Add your image path here
-            style={getImageStyle(isExhaustInwardsOn)}
-          />
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                getSmallTextStyle(isExhaustInwardsOn),
-                { marginLeft: 10 },
-              ]}
-            >
-              Exhaust{"\n"}(Inwards)
-            </Text>
-            <Switch
-              value={isExhaustInwardsOn}
-              onValueChange={(value) => {
-                setExhaustInwardsOn((prev) => !prev);
-                handleBlower(value);
-              }}
-              style={styles.switch}
+        <Guard locked={lockIn}>
+          <View style={cardStyle(isExhInOn, lockIn)}>
+            <Image
+              source={require("../../assets/fan.png")}
+              style={imgStyle(isExhInOn)}
             />
+            <View style={styles.labelRow}>
+              <Text style={styles.smallText(isExhInOn)}>
+                Exhaust{"\n"}(Inwards)
+              </Text>
+              <Switch
+                value={isExhInOn}
+                onValueChange={onToggleIn}
+                disabled={lockIn}
+                style={styles.switch}
+              />
+            </View>
           </View>
-        </View>
+        </Guard>
 
-        <View style={getCardStyle(isExhaustOutwardsOn)}>
-          <Image
-            source={require("../../assets/fan.png")} // Add your image path here
-            style={getImageStyle(isExhaustOutwardsOn)}
-          />
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                getSmallTextStyle(isExhaustOutwardsOn),
-                { marginLeft: 10 },
-              ]}
-            >
-              Exhaust{"\n"}(Outwards)
-            </Text>
-            <Switch
-              value={isExhaustOutwardsOn}
-              onValueChange={(value) => {
-                setExhaustOutwardsOn((prev) => !prev);
-                handleExhaust(value);
-              }}
-              style={styles.switch}
+        <Guard locked={lockOut}>
+          <View style={cardStyle(isExhOutOn, lockOut)}>
+            <Image
+              source={require("../../assets/fan.png")}
+              style={imgStyle(isExhOutOn)}
             />
+            <View style={styles.labelRow}>
+              <Text style={styles.smallText(isExhOutOn)}>
+                Exhaust{"\n"}(Outwards)
+              </Text>
+              <Switch
+                value={isExhOutOn}
+                onValueChange={onToggleOut}
+                disabled={lockOut}
+                style={styles.switch}
+              />
+            </View>
           </View>
+        </Guard>
+      </View>
+
+      {loading && (
+        <View style={styles.spinnerBox}>
+          <ActivityIndicator animating size="large" />
         </View>
-      </View>
-      <View
-        style={{
-          position: "absolute",
-          top: "50%",
-        }}
-      >
-        <ActivityIndicator animating={loading} size={"large"} />
-      </View>
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -254,14 +240,15 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "45%",
-    height: 180, // Set a fixed height for the card
-    backgroundColor: "#ffffff",
+    height: 180,
     borderRadius: 30,
     justifyContent: "center",
-    alignItems: "center", // Centers children horizontally (for 'row' direction)
+    alignItems: "center",
     margin: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { 
+      width: 0, 
+      height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
@@ -274,24 +261,25 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     alignSelf: "flex-start",
   },
-  cardText: {
-    fontSize: 16,
-    color: "#000",
-    marginTop: 5,
-    marginBottom: 5,
-    marginRight: 15,
-  },
-  smallCardText: {
+  cardText: { 
+    fontSize: 16, 
+    marginTop: 5, 
+    marginBottom: 5, 
+    marginRight: 15 },
+  smallText: (on) => ({
     fontSize: 14,
-    color: "#000",
+    color: on ? "#fff" : "#000",
     marginTop: 5,
     marginBottom: 5,
     marginRight: 15,
-  },
-  switch: {
-    transform: [{ rotate: "90deg" }],
-    marginLeft: 8,
-  },
+  }),
+  labelRow: { 
+    flexDirection: "row", 
+    alignItems: "center" },
+  switch: { 
+    transform: [{ rotate: "90deg" }], 
+    marginLeft: 8 },
+  spinnerBox: { 
+    position: "absolute", 
+    top: "50%" },
 });
-
-export default AppliancesScreen;
