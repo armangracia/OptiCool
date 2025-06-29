@@ -27,15 +27,27 @@ exports.createActivityLog = async (req, res) => {
 
 exports.getActivityLogs = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, page = 1, limit = 20 } = req.query;
 
     const filter = userId ? { userId } : {};
+    const pageInt = parseInt(page);
+    const limitInt = parseInt(limit);
+    const skip = (pageInt - 1) * limitInt;
+
+    const totalLogs = await ActivityLog.countDocuments(filter);
 
     const logs = await ActivityLog.find(filter)
       .populate("userId", "username email")
-      .sort({ timestamp: -1 });
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(limitInt);
 
-    res.status(200).json({ success: true, logs });
+    res.status(200).json({
+      success: true,
+      logs,
+      currentPage: pageInt,
+      totalPages: Math.ceil(totalLogs / limitInt),
+    });
   } catch (err) {
     console.error("Fetch Logs Error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch logs" });
