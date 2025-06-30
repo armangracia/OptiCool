@@ -1,62 +1,66 @@
-const Report = require('../models/EReport');  // Import your Report model
-const User = require('../models/User');  // Import your User model
-const moment = require('moment-timezone');  // Import moment-timezone
+const Report = require('../models/EReport');  
+const User = require('../models/User');     
+const moment = require('moment-timezone');    
 
 exports.sendReport = async (req, res, next) => {
-    try {
-        console.log("Request Body:", req.body); // Log the request body to ensure data is being passed
+  try {
+    console.log("Request Body:", req.body); 
 
-        const { appliance, status, user } = req.body;  // Destructure appliance, status, and user from the request body
+    const { appliance, status, user, description } = req.body;
 
-        if (!appliance || !status || !user) {
-            console.log("Missing required fields:", { appliance, status, user }); // Log missing fields
-            return res.status(400).json({ message: 'Appliance, status, and user are required.' });
-        }
-
-        const userData = await User.findById(user);
-        if (!userData) {
-            return res.status(404).json({ message: 'User not found.' });
-        }
-
-        const timeReported = moment().tz("Asia/Manila").format("hh:mm:ss A");  // Set the timeReported field with Manila time in AM/PM format
-
-        console.log("Time Reported:", timeReported); // Log the timeReported value
-
-        // Create a new report
-        const newReport = await Report.create({
-            appliance,
-            status,
-            reportDate: new Date(),  // Optional: you can store the report's timestamp
-            timeReported,
-            user,  // Store only user ID
-        });
-
-        console.log("New Report Created:", newReport); // Log the new report
-
-        if (!newReport) {
-            return res.status(400).json({ message: 'Report could not be created.' });
-        }
-
-        return res.status(201).json({ message: 'Report successfully submitted', success: true }); // Success response
-    } catch (err) {
-        console.error("Error submitting report:", err.message);  // Log error for debugging purposes
-        return res.status(400).json({
-            message: 'Something went wrong while submitting the report. Please try again later.',
-            success: false,
-        });
+    
+    if (!appliance || !status || !user || !description) {
+      console.log("Missing required fields:", { appliance, status, user, description });
+      return res.status(400).json({ message: 'Appliance, status, description, and user are required.' });
     }
+
+    
+    const userData = await User.findById(user);
+    if (!userData) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    
+    const timeReported = moment().tz("Asia/Manila").format("hh:mm:ss A");
+    console.log("Time Reported:", timeReported);
+
+    
+    const newReport = await Report.create({
+      appliance,
+      status,
+      description,
+      reportDate: new Date(),
+      timeReported,
+      user,
+    });
+
+    console.log("New Report Created:", newReport);
+
+    return res.status(201).json({
+      message: 'Report successfully submitted',
+      success: true,
+      report: newReport,
+    });
+
+  } catch (err) {
+    console.error("Error submitting report:", err);
+    return res.status(400).json({
+      message: err.message || 'Something went wrong while submitting the report. Please try again later.',
+      success: false,
+    });
+  }
 };
+
 
 exports.getAllReports = async (req, res, next) => {
     try {
-        const reports = await Report.find().populate('user', 'username email');  // Fetch all reports and populate user field
+        const reports = await Report.find().populate('user', 'username email');  
 
         if (!reports || reports.length === 0) {
             return res.status(404).json({ message: 'No reports found.' });
         }
 
-        console.log("Fetched Reports:", reports); // Log the fetched reports
-
+        console.log("Fetched Reports:", reports); 
         return res.status(200).json({ reports });
     } catch (err) {
         console.error(err);
