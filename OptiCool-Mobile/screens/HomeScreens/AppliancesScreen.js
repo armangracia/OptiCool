@@ -14,9 +14,9 @@ import dmt3API from "../../services/dmt3API";
 import logActivity from "../../assets/common/logActivity";
 
 
-const TOGGLE_LIMIT = 5; 
-const WINDOW_MS = 10_000; 
-const COOLDOWN_MS = 30_000; 
+// const TOGGLE_LIMIT = 5; 
+// const WINDOW_MS = 10_000; 
+// const COOLDOWN_MS = 30_000; 
 
 export default function AppliancesScreen() {
   const { user, token } = useSelector((state) => state.auth);
@@ -33,53 +33,72 @@ export default function AppliancesScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  const historyRef = useRef({
-    AC: [],
-    Fan: [],
-    ExhIn: [],
-    ExhOut: [],
-  });
+  // const historyRef = useRef({
+  //   AC: [],
+  //   Fan: [],
+  //   ExhIn: [],
+  //   ExhOut: [],
+  // });
 
-  const recordToggle = (key, setLock) => {
-    const now = Date.now();
-    const arr = historyRef.current[key];
-    historyRef.current[key] = arr.filter((t) => now - t < WINDOW_MS);
-    historyRef.current[key].push(now);
+  // const recordToggle = (key, setLock) => {
+  //   const now = Date.now();
+  //   const arr = historyRef.current[key];
+  //   historyRef.current[key] = arr.filter((t) => now - t < WINDOW_MS);
+  //   historyRef.current[key].push(now);
 
-    if (historyRef.current[key].length > TOGGLE_LIMIT && !lockAC) {
-      setLock(true);
-      setTimeout(() => {
-        setLock(false);
-        historyRef.current[key] = [];
-      }, COOLDOWN_MS);
+  //   if (historyRef.current[key].length > TOGGLE_LIMIT && !lockAC) {
+  //     setLock(true);
+  //     setTimeout(() => {
+  //       setLock(false);
+  //       historyRef.current[key] = [];
+  //     }, COOLDOWN_MS);
+  //   }
+  // };
+
+ const makeHandler =
+  (apiOn, apiOff, setState, key, setLock) => async (value) => {
+    const lockSetter = {
+      AC: setLockAC,
+      Fan: setLockFan,
+      "Exhaust In": setLockIn,
+      "Exhaust Out": setLockOut,
+    }[key];
+
+    const lockState = {
+      AC: lockAC,
+      Fan: lockFan,
+      "Exhaust In": lockIn,
+      "Exhaust Out": lockOut,
+    }[key];
+
+    if (lockState) {
+      Alert.alert("Cooldown", `Please wait 20 seconds before toggling ${key} again.`);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (value) await apiOn();
+      else await apiOff();
+
+      await logActivity({
+        userId: user._id,
+        action: `Turned ${value ? "on" : "off"} ${key}`,
+        token,
+      });
+
+      setState(value);
+      
+      lockSetter(true);
+      setTimeout(() => lockSetter(false), 5_000);
+    } catch (err) {
+      Alert.alert("No running system", "Not connected to the system");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const makeHandler =
-    (apiOn, apiOff, setState, key, setLock) => async (value) => {
-      if (setLock === true) return; 
-
-      recordToggle(key, setLock);
-      if (setLock === true) return; 
-
-      setLoading(true);
-      try {
-        if (value) await apiOn();
-        else await apiOff();
-
-        await logActivity({
-          userId: user._id,
-          action: `Turned ${value ? "on" : "off"} ${key}`,
-          token,
-        });
-
-        setState(value);
-      } catch (err) {
-        Alert.alert("No running system", "Not connected to the system");
-        console.error(err);
-      }
-      setLoading(false);
-    };
 
   const onToggleAC = makeHandler(
     dmt3API.turnOnAllAC,

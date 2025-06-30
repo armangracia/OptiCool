@@ -4,11 +4,11 @@
 
 // {
 //     Platform.OS == 'android'
-//         ? baseURL = 'http://192.168.100.7:4000/api/v1'
-//         : baseURL = 'http://192.168.100.7:4000/api/v1'
+//         ? baseURL = 'http://192.168.91.74:4000/api/v1'
+//         : baseURL = 'http://192.168.91.74:4000/api/v1'
 // }
 
-    
+
 // export default baseURL;
 
 

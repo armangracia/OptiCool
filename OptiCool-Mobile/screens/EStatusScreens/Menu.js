@@ -79,6 +79,7 @@ const Menu = () => {
     setStatusToDevice(appliance, applianceStatus);
   };
 
+  
   const setStatusToDevice = async (device, applianceStatus) => {
     try {
       await dmt3API.turnOffDevice(device, applianceStatus);
@@ -172,14 +173,25 @@ const Menu = () => {
 
       setApplianceStatus({
         AC: { AC: Boolean(data.ac1) },
-        Fan: { "Fan 1": Boolean(data.efan) },
-        Exhaust: { "Exhaust 1": Boolean(data.exhaust) },
-        Blower: { "Blower 1": Boolean(data.blower) },
+        Fan: { Fan: Boolean(data.efan) },
+        Exhaust: { Exhaust: Boolean(data.exhaust) },
+        Blower: { Blower: Boolean(data.blower) },
       });
     } catch {
       setIsConnected(false);
     }
   };
+
+    // const getComponentsStatus = async () => {
+    //   try {
+    //     const data = await dmt3API.getComponentsStatusAPI();
+    //     setExhaustStatus(data.exhaust);
+    //     setFanStatus(data.efan);
+    //   } catch (err) {
+    //     console.log(err);
+    //     resetAll();
+    //   }
+    // };
 
   useFocusEffect(
     useCallback(() => {

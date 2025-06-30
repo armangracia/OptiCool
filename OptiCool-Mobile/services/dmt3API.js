@@ -152,6 +152,16 @@ const turnOffDevice = async (device = "none", applianceStatus) => {
     }
     return;
   }
+  
+//   if (device === "Fan 1") {
+//   if (!applianceStatus.Fan["Fan 1"]) {
+//     await turnOnEFans();
+//   } else {
+//     await turnOffEFans(); 
+//   }
+//   return;
+// }
+
 
   if (device === "Exhaust 1") {
     if (!applianceStatus.Exhaust["Exhaust 1"]) {
