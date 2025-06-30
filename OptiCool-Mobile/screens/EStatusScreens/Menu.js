@@ -33,6 +33,7 @@ const Menu = () => {
   const [selected, setSelected] = useState("AC");
   const [submitting, setSubmitting] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedDescription, setSelectedDescription] = useState("");
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportedAppliance, setReportedAppliance] = useState("");
 
@@ -79,7 +80,6 @@ const Menu = () => {
     setStatusToDevice(appliance, applianceStatus);
   };
 
-  
   const setStatusToDevice = async (device, applianceStatus) => {
     try {
       await dmt3API.turnOffDevice(device, applianceStatus);
@@ -95,8 +95,12 @@ const Menu = () => {
   };
 
   const handleSubmitReport = async () => {
+    if (!selectedDescription) {
+      Alert.alert("Warning", "Please select an issue.");
+      return;
+    }
     if (!selectedStatus) {
-      Alert.alert("Warning", "Please select a status.");
+      Alert.alert("Warning", "Please select appliance status.");
       return;
     }
 
@@ -110,6 +114,7 @@ const Menu = () => {
       const timeReported = moment().tz("Asia/Manila").format("hh:mm:ss A");
       const reportPayload = {
         appliance: reportedAppliance,
+        description: selectedDescription,
         status: selectedStatus,
         reportDate: new Date(),
         timeReported,
@@ -182,16 +187,16 @@ const Menu = () => {
     }
   };
 
-    // const getComponentsStatus = async () => {
-    //   try {
-    //     const data = await dmt3API.getComponentsStatusAPI();
-    //     setExhaustStatus(data.exhaust);
-    //     setFanStatus(data.efan);
-    //   } catch (err) {
-    //     console.log(err);
-    //     resetAll();
-    //   }
-    // };
+  // const getComponentsStatus = async () => {
+  //   try {
+  //     const data = await dmt3API.getComponentsStatusAPI();
+  //     setExhaustStatus(data.exhaust);
+  //     setFanStatus(data.efan);
+  //   } catch (err) {
+  //     console.log(err);
+  //     resetAll();
+  //   }
+  // };
 
   useFocusEffect(
     useCallback(() => {
@@ -205,31 +210,52 @@ const Menu = () => {
       contentContainerStyle={styles.scrollViewContent}
     >
       <View style={styles.container}>
-        {/* REPORT MODAL */}
         <Modal visible={showReportModal} transparent animationType="slide">
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
                 Report Issue for {reportedAppliance}
               </Text>
-              {statuses.map((status) => (
+
+              {/* Dropdown for Appliance Status */}
+              <View style={styles.dropdownContainer}>
+                <Text style={styles.dropdownLabel}>Appliance Status</Text>
+                <View style={styles.dropdownBox}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setSelectedStatus(
+                        selectedStatus === "active" ? "inactive" : "active"
+                      )
+                    }
+                  >
+                    <Text style={styles.dropdownText}>
+                      {selectedStatus ? selectedStatus : "Select status"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Radio Buttons for Description */}
+              <Text style={styles.dropdownLabel}>Issue Description</Text>
+              {statuses.map((desc) => (
                 <TouchableOpacity
-                  key={status}
+                  key={desc}
                   style={styles.radioOption}
-                  onPress={() => setSelectedStatus(status)}
+                  onPress={() => setSelectedDescription(desc)}
                 >
                   <MaterialCommunityIcons
                     name={
-                      selectedStatus === status
+                      selectedDescription === desc
                         ? "radiobox-marked"
                         : "radiobox-blank"
                     }
                     size={20}
                     color="#2F80ED"
                   />
-                  <Text style={styles.statusLabel}>{status}</Text>
+                  <Text style={styles.statusLabel}>{desc}</Text>
                 </TouchableOpacity>
               ))}
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   onPress={handleSubmitReport}
@@ -419,18 +445,23 @@ const styles = StyleSheet.create({
   },
   // Modal
   modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    width: "85%",
-    alignItems: "center",
-  },
+  flex: 1,
+  backgroundColor: "rgba(0, 0, 0, 0.7)", 
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+modalContent: {
+  backgroundColor: "#fff",
+  padding: 20,
+  borderRadius: 12,
+  width: "80%", 
+  elevation: 10,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+},
   modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
   radioOption: {
     flexDirection: "row",
@@ -453,6 +484,26 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   buttonText: { color: "#fff", fontWeight: "bold" },
+  dropdownContainer: {
+    width: "100%",
+    marginBottom: 10,
+  },
+  dropdownLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  dropdownBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    backgroundColor: "#f5f5f5",
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: "#333",
+  },
 });
 
 export default Menu;
