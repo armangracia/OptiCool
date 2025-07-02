@@ -56,7 +56,7 @@ export default function BottomTabs() {
         tabBarInactiveTintColor: "#7a7a7a",
       }}
     >
-      {user.role === "user" || user.role === "admin" ? (
+      {user.role === "superadmin" || user.role === "admin" ? (
         <>
           <Tab.Screen
             name="Dashboard"
