@@ -13,10 +13,9 @@ import { useSelector } from "react-redux";
 import dmt3API from "../../services/dmt3API";
 import logActivity from "../../assets/common/logActivity";
 
-
-// const TOGGLE_LIMIT = 5; 
-// const WINDOW_MS = 10_000; 
-// const COOLDOWN_MS = 30_000; 
+// const TOGGLE_LIMIT = 5;
+// const WINDOW_MS = 10_000;
+// const COOLDOWN_MS = 30_000;
 
 export default function AppliancesScreen() {
   const { user, token } = useSelector((state) => state.auth);
@@ -25,6 +24,7 @@ export default function AppliancesScreen() {
   const [isFanOn, setIsFanOn] = useState(false);
   const [isExhInOn, setIsExhInOn] = useState(false);
   const [isExhOutOn, setIsExhOutOn] = useState(false);
+  const [isFakeOn, setIsFakeOn] = useState(false);
 
   const [lockAC, setLockAC] = useState(false);
   const [lockFan, setLockFan] = useState(false);
@@ -33,72 +33,52 @@ export default function AppliancesScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  // const historyRef = useRef({
-  //   AC: [],
-  //   Fan: [],
-  //   ExhIn: [],
-  //   ExhOut: [],
-  // });
+  const makeHandler =
+    (apiOn, apiOff, setState, key, setLock) => async (value) => {
+      const lockSetter = {
+        AC: setLockAC,
+        Fan: setLockFan,
+        "Exhaust In": setLockIn,
+        "Exhaust Out": setLockOut,
+      }[key];
 
-  // const recordToggle = (key, setLock) => {
-  //   const now = Date.now();
-  //   const arr = historyRef.current[key];
-  //   historyRef.current[key] = arr.filter((t) => now - t < WINDOW_MS);
-  //   historyRef.current[key].push(now);
+      const lockState = {
+        AC: lockAC,
+        Fan: lockFan,
+        "Exhaust In": lockIn,
+        "Exhaust Out": lockOut,
+      }[key];
 
-  //   if (historyRef.current[key].length > TOGGLE_LIMIT && !lockAC) {
-  //     setLock(true);
-  //     setTimeout(() => {
-  //       setLock(false);
-  //       historyRef.current[key] = [];
-  //     }, COOLDOWN_MS);
-  //   }
-  // };
+      if (lockState) {
+        Alert.alert(
+          "Cooldown",
+          `Please wait 20 seconds before toggling ${key} again.`
+        );
+        return;
+      }
 
- const makeHandler =
-  (apiOn, apiOff, setState, key, setLock) => async (value) => {
-    const lockSetter = {
-      AC: setLockAC,
-      Fan: setLockFan,
-      "Exhaust In": setLockIn,
-      "Exhaust Out": setLockOut,
-    }[key];
+      setLoading(true);
+      try {
+        if (value) await apiOn();
+        else await apiOff();
 
-    const lockState = {
-      AC: lockAC,
-      Fan: lockFan,
-      "Exhaust In": lockIn,
-      "Exhaust Out": lockOut,
-    }[key];
+        await logActivity({
+          userId: user._id,
+          action: `Turned ${value ? "on" : "off"} ${key}`,
+          token,
+        });
 
-    if (lockState) {
-      Alert.alert("Cooldown", `Please wait 20 seconds before toggling ${key} again.`);
-      return;
-    }
+        setState(value);
 
-    setLoading(true);
-    try {
-      if (value) await apiOn();
-      else await apiOff();
-
-      await logActivity({
-        userId: user._id,
-        action: `Turned ${value ? "on" : "off"} ${key}`,
-        token,
-      });
-
-      setState(value);
-      
-      lockSetter(true);
-      setTimeout(() => lockSetter(false), 5_000);
-    } catch (err) {
-      Alert.alert("No running system", "Not connected to the system");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+        lockSetter(true);
+        setTimeout(() => lockSetter(false), 5_000);
+      } catch (err) {
+        Alert.alert("No running system", "Not connected to the system");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const onToggleAC = makeHandler(
     dmt3API.turnOnAllAC,
@@ -132,17 +112,17 @@ export default function AppliancesScreen() {
   const cardStyle = (on, locked) => ({
     ...styles.card,
     opacity: locked ? 0.4 : 1,
-    backgroundColor: on ? "#000" : "#fff",
+    backgroundColor: on ? "green" : "red",
   });
 
   const textStyle = (on) => ({
     ...styles.cardText,
-    color: on ? "#fff" : "#000",
+    color: on ? "white" : "white",
   });
 
   const imgStyle = (on) => ({
     ...styles.cardImage,
-    tintColor: on ? "#fff" : "#000",
+    tintColor: on ? "white" : "white",
   });
 
   const Guard = ({ locked, children }) =>
@@ -234,6 +214,20 @@ export default function AppliancesScreen() {
         </Guard>
       </View>
 
+      {/* <View style={styles.row}>
+        <TouchableWithoutFeedback onPress={() => setIsFakeOn((prev) => !prev)}>
+          <View style={cardStyle(isFakeOn, false)}>
+            <Image
+              source={require("../../assets/fan.png")} // use any icon you want
+              style={imgStyle(isFakeOn)}
+            />
+            <View style={styles.labelRow}>
+              <Text style={textStyle(isFakeOn)}>Fake Button</Text>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </View> */}
+
       {loading && (
         <View style={styles.spinnerBox}>
           <ActivityIndicator animating size="large" />
@@ -265,9 +259,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: 3,
     shadowColor: "#000",
-    shadowOffset: { 
-      width: 0, 
-      height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 2,
@@ -280,25 +275,29 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     alignSelf: "flex-start",
   },
-  cardText: { 
-    fontSize: 16, 
-    marginTop: 5, 
-    marginBottom: 5, 
-    marginRight: 15 },
+  cardText: {
+    fontSize: 16,
+    marginTop: 5,
+    marginBottom: 5,
+    marginRight: 15,
+  },
   smallText: (on) => ({
     fontSize: 14,
-    color: on ? "#fff" : "#000",
+    color: on ? "white" : "white",
     marginTop: 5,
     marginBottom: 5,
     marginRight: 15,
   }),
-  labelRow: { 
-    flexDirection: "row", 
-    alignItems: "center" },
-  switch: { 
-    transform: [{ rotate: "90deg" }], 
-    marginLeft: 8 },
-  spinnerBox: { 
-    position: "absolute", 
-    top: "50%" },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  switch: {
+    transform: [{ rotate: "90deg" }],
+    marginLeft: 8,
+  },
+  spinnerBox: {
+    position: "absolute",
+    top: "50%",
+  },
 });
