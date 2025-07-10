@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    pushToken: {
+      type: String,
+      default: null,
+    },
     resetPasswordCode: String,
     resetPasswordCodeExpire: Date,
     resetPasswordToken: String,
@@ -174,8 +178,8 @@ userSchema.methods.verifyCode = async function (inputtedCode) {
 userSchema.index(
   { deletedAt: 1 },
   {
-    expireAfterSeconds: 60 * 60 * 24 * 30, 
-    partialFilterExpression: { isDeleted: true }, 
+    expireAfterSeconds: 60 * 60 * 24 * 30,
+    partialFilterExpression: { isDeleted: true },
   }
 );
 

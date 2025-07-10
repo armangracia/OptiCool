@@ -10,9 +10,18 @@ import {
 import * as Yup from "yup";
 import { Formik } from "formik";
 import * as ImagePicker from "expo-image-picker";
+import * as Notifications from "expo-notifications";
 import mime from "mime";
 import baseURL from "../../assets/common/baseUrl";
 import axios from "axios";
+
+const getPushToken = async () => {
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== "granted") return null;
+
+  const tokenData = await Notifications.getExpoPushTokenAsync();
+  return tokenData.data;
+};
 
 export default function Register({ navigation }) {
   const [avatar, setAvatar] = useState(null);
@@ -23,7 +32,8 @@ export default function Register({ navigation }) {
       return;
     }
 
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       alert("Permission to access gallery is required!");
       return;
@@ -81,6 +91,13 @@ export default function Register({ navigation }) {
       name: newImageUri?.split("/").pop(),
     };
 
+    // ✅ Get the Expo push token
+    const pushToken = await getPushToken();
+    if (pushToken) {
+      formData.append("pushToken", pushToken);
+    }
+
+    // Append all form fields
     Object.entries(userData).forEach(([key, value]) => {
       formData.append(key, value);
     });
@@ -119,12 +136,13 @@ export default function Register({ navigation }) {
           <>
             <View style={styles.avatarContainer}>
               {avatar ? (
-                <Image
-                  source={{ uri: avatar }}
-                  style={styles.avatarImage}
-                />
+                <Image source={{ uri: avatar }} style={styles.avatarImage} />
               ) : (
-                <Avatar.Icon icon="account" size={100} style={styles.avatarPlaceholder} />
+                <Avatar.Icon
+                  icon="account"
+                  size={100}
+                  style={styles.avatarPlaceholder}
+                />
               )}
               <Button
                 icon={avatar ? "delete" : "camera"}
@@ -149,7 +167,10 @@ export default function Register({ navigation }) {
               error={touched.username && !!errors.username}
               style={styles.input}
             />
-            <HelperText type="error" visible={touched.username && errors.username}>
+            <HelperText
+              type="error"
+              visible={touched.username && errors.username}
+            >
               {errors.username}
             </HelperText>
 
@@ -177,7 +198,10 @@ export default function Register({ navigation }) {
               error={touched.password && !!errors.password}
               style={styles.input}
             />
-            <HelperText type="error" visible={touched.password && errors.password}>
+            <HelperText
+              type="error"
+              visible={touched.password && errors.password}
+            >
               {errors.password}
             </HelperText>
 
@@ -191,7 +215,10 @@ export default function Register({ navigation }) {
               error={touched.confirmPassword && !!errors.confirmPassword}
               style={styles.input}
             />
-            <HelperText type="error" visible={touched.confirmPassword && errors.confirmPassword}>
+            <HelperText
+              type="error"
+              visible={touched.confirmPassword && errors.confirmPassword}
+            >
               {errors.confirmPassword}
             </HelperText>
 

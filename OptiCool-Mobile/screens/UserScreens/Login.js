@@ -6,14 +6,22 @@ import {
   TouchableOpacity,
   TextInput as RNTextInput,
 } from "react-native";
-import Spinner from 'react-native-loading-spinner-overlay';
-import { Button, Text, HelperText, TextInput, IconButton } from "react-native-paper";
+import Spinner from "react-native-loading-spinner-overlay";
+import {
+  Button,
+  Text,
+  HelperText,
+  TextInput,
+  IconButton,
+} from "react-native-paper";
 import * as Yup from "yup";
 import { Formik } from "formik";
 import axios from "axios";
 import baseURL from "../../assets/common/baseUrl";
 import { setAuth } from "../../states/authSlice";
 import { useDispatch } from "react-redux";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 
 export default function Login({ navigation }) {
   const dispatch = useDispatch();
@@ -28,6 +36,34 @@ export default function Login({ navigation }) {
       .min(6, "Password must be at least 6 characters")
       .required("Password is required"),
   });
+
+  const registerPushToken = async (userId) => {
+    if (!Device.isDevice) return;
+
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") return;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    const token = tokenData.data;
+
+    // Send it to the backend
+    try {
+      await axios.put(`${baseURL}/users/${userId}/push-token`, {
+        pushToken: token,
+      });
+      console.log("Push token saved:", token);
+    } catch (err) {
+      console.log("Failed to save push token:", err);
+    }
+  };
 
   const handleSubmit = async (values, setSubmitting) => {
     setLoading(true);
@@ -53,7 +89,9 @@ export default function Login({ navigation }) {
       <Formik
         initialValues={{ email: "", password: "" }}
         validationSchema={validationSchema}
-        onSubmit={(values, { setSubmitting }) => handleSubmit(values, setSubmitting)}
+        onSubmit={(values, { setSubmitting }) =>
+          handleSubmit(values, setSubmitting)
+        }
       >
         {({
           handleChange,
@@ -79,7 +117,7 @@ export default function Login({ navigation }) {
               {errors.email}
             </HelperText>
 
-            <View style={{ position: 'relative' }}>
+            <View style={{ position: "relative" }}>
               <TextInput
                 placeholder="Enter your password"
                 mode="outlined"
@@ -97,11 +135,18 @@ export default function Login({ navigation }) {
                 style={styles.eyeIcon}
               />
             </View>
-            <HelperText type="error" visible={touched.password && errors.password}>
+            <HelperText
+              type="error"
+              visible={touched.password && errors.password}
+            >
               {errors.password}
             </HelperText>
 
-            <TouchableOpacity onPress={() => {/* handle forgot password */}}>
+            <TouchableOpacity
+              onPress={() => {
+                /* handle forgot password */
+              }}
+            >
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
 
@@ -118,8 +163,6 @@ export default function Login({ navigation }) {
             </Button>
 
             {/* <Text style={styles.orLoginText}>Or Login with</Text> */}
-
-            
 
             <View style={styles.registerRow}>
               <Text>Don’t have an account? </Text>
@@ -199,6 +242,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   spinnerTextStyle: {
-    color: '#aed6f2',
+    color: "#aed6f2",
   },
 });

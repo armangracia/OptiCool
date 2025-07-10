@@ -1,4 +1,5 @@
 import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useSelector } from "react-redux";
@@ -28,11 +29,79 @@ import ReportDetails from "./screens/AdminScreens/ReportDetails"; // Ensure corr
 import PostList from "./screens/AdminScreens/PostList"; // Ensure correct import
 import NotificationScreen from "./screens/NotificationScreen";
 import DataExtraction from "./screens/AdminScreens/DataExtraction";
+import * as Notifications from "expo-notifications";
+import { useEffect, useRef } from "react";
+import { Platform, Alert } from "react-native";
 
 const Stack = createStackNavigator();
 
 export default function Main() {
-  const { isLogin, role } = useSelector((state) => state.auth);
+  const { isLogin, role, user } = useSelector((state) => state.auth); // make sure user._id or user.id exists
+  const inSessionPrevRole = useRef(role); // catches changes while mounted
+  const notifiedThisSession = useRef(false); // avoids double-fires in same run
+
+  useEffect(() => {
+    Notifications.getPermissionsAsync().then(({ status }) => {
+      if (status !== "granted") Notifications.requestPermissionsAsync();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isLogin || !user) return; // wait for a logged-in user
+
+    const storageKey = `lastRole_${user._id}`; // or user.id
+
+    const checkRoleChange = async () => {
+      const storedRole = (await AsyncStorage.getItem(storageKey)) || "pending";
+      const currentRole = role?.toLowerCase() ?? "pending";
+
+      const promotedToSuperadmin =
+        storedRole !== currentRole && currentRole === "superadmin";
+
+      const approvedFromPending =
+        storedRole === "pending" && currentRole !== "pending";
+
+      if (promotedToSuperadmin) {
+        await notify("Access Granted", "You are now a Superadmin.");
+      } else if (approvedFromPending) {
+        await notify("Account Approved", "Your account is now approved.");
+      }
+
+      //  ➜ always store the latest role so we don't re-notify next time
+      await AsyncStorage.setItem(storageKey, currentRole);
+    };
+
+    checkRoleChange();
+  }, [isLogin, role, user]);
+
+
+    useEffect(() => {
+    if (notifiedThisSession.current) return;
+
+    const becameSuperadmin =
+      inSessionPrevRole.current !== role &&
+      role?.toLowerCase() === "superadmin";
+
+    const approvedFromPending =
+      inSessionPrevRole.current === "pending" &&
+      role?.toLowerCase() !== "pending";
+
+    if (becameSuperadmin) {
+      notify("Access Granted", "You are now a Superadmin.");
+      notifiedThisSession.current = true;
+    } else if (approvedFromPending) {
+      notify("Account Approved", "Your account is now approved.");
+      notifiedThisSession.current = true;
+    }
+
+    inSessionPrevRole.current = role;
+  }, [role]);
+
+  const notify = (title, body) =>
+    Notifications.scheduleNotificationAsync({
+      content: { title, body },
+      trigger: null,
+    });
 
   return (
     <NavigationContainer>
@@ -64,10 +133,10 @@ export default function Main() {
           <Stack.Screen name="DataExtraction" component={DataExtraction} />
 
           <Stack.Screen
-                name="HelpDetails"
-                component={HelpDetails}
-                options={{ title: "Help Details" }}
-              />
+            name="HelpDetails"
+            component={HelpDetails}
+            options={{ title: "Help Details" }}
+          />
 
           {/* Role-based screens */}
           {role === "SuperAdmin" && (

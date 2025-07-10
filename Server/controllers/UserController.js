@@ -1,8 +1,9 @@
 const User = require("../models/User");
 const sendToken = require("../utils/jwtToken");
 const File = require("../utils/cloudinary");
+const { sendPushNotification } = require("../utils/pushNotify");
 
-exports.register = async (req, res, next) => {
+exports.register = async (req, res) => {
   try {
     const file = req.file;
 
@@ -16,6 +17,23 @@ exports.register = async (req, res, next) => {
 
     if (!user) {
       return res.status(400).send("the user cannot be created!");
+    }
+
+    if (!user.isApproved) {
+      const admins = await User.find({
+        role: "admin",
+        pushToken: { $ne: null },
+      });
+      await Promise.all(
+        admins.map((a) =>
+          sendPushNotification({
+            expoPushToken: a.pushToken,
+            title: "New Pending User",
+            body: `${user.username} registered and awaits approval.`,
+            data: { userId: user._id },
+          })
+        )
+      );
     }
 
     return sendToken(user, 200, res, "Success");
@@ -241,7 +259,7 @@ exports.restoreUser = async (req, res) => {
       {
         isDeleted: false,
         deletedAt: null,
-        isApproved: false, 
+        isApproved: false,
       },
       { new: true }
     );
@@ -318,5 +336,23 @@ exports.approveUser = async (req, res) => {
   } catch (error) {
     console.error("Approve user error:", error);
     res.status(500).json({ message: "Failed to update user status." });
+  }
+};
+
+exports.savePushToken = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pushToken } = req.body;
+
+    const user = await User.findByIdAndUpdate(id, { pushToken }, { new: true });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ success: true, message: "Push token saved", user });
+  } catch (error) {
+    console.error("Error saving push token:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to save push token" });
   }
 };

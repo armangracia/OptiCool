@@ -33,6 +33,9 @@ router.put('/restore/:id', isAuthenticated, userController.restoreUser);
 
 router.get('/deleted', isAuthenticated, userController.getDeletedUsers);
 
+router.put("/push-token/:id", userController.savePushToken);
+
+
 
 // Add the new route for fetching the number of users
 // router.get('/users/number', userController.getNumberOfUsers);
