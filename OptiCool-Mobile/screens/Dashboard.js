@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { Avatar, Button, TextInput, FAB } from "react-native-paper";
+import { Avatar, Button, TextInput, FAB, Badge } from "react-native-paper";
 import axios from "axios";
 import { MaterialCommunityIcons, Ionicons } from "react-native-vector-icons";
 import AppliancesScreen from "./HomeScreens/AppliancesScreen";
@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [roomTemp, setRoomTemp] = useState(null);
   const [lastRequestTime, setLastRequestTime] = useState(null);
   const [isRequesting, setIsRequesting] = useState(false);
+  const { pendingCount } = useSelector((state) => state.notifications); // Assuming you have a notifications slice
   const navigation = useNavigation();
 
   const [isDropdownVisible, setDropdownVisible] = useState(false); // Dropdown state
@@ -225,34 +226,38 @@ export default function Dashboard() {
 
         <Text style={styles.intro}>Manage Room</Text>
         <View style={styles.header}>
-          <View style={styles.nameContainer}>
+          <View>
             <Text style={styles.greeting}>
               Hey, <Text style={styles.name}>{user.username}</Text>
             </Text>
           </View>
-          {/* Alert Icon (beside avatar) */}
+          <View style={styles.rightIcons}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("NotificationScreen")}
+              style={styles.bellContainer}
+            >
+              <MaterialCommunityIcons name="bell" size={28} color="#000" />
+              {pendingCount > 0 && (
+                <Badge style={styles.badge}>{pendingCount}</Badge>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={toggleDropdown}
-            style={styles.avatarContainer}
-          >
-            <Avatar.Image
-              source={{
-                uri:
-                  user.avatar?.url || "https://example.com/default-avatar.png",
-              }}
-              size={40}
-              style={styles.avatar}
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={toggleDropdown}
+              style={styles.avatarContainer}
+            >
+              <Avatar.Image
+                source={{
+                  uri:
+                    user.avatar?.url ||
+                    "https://example.com/default-avatar.png",
+                }}
+                size={40}
+                style={styles.avatar}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
-        <MaterialCommunityIcons
-          name="bell"
-          size={24}
-          color="#000000"
-          onPress={() => navigation.navigate("NotificationScreen")} 
-          style={styles.alertIconContainer}
-        />
         {/* Dropdown Menu */}
         {isDropdownVisible && (
           <Modal
@@ -558,4 +563,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
   },
+  rightIcons: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+
+bellContainer: {
+  position: "relative",
+  marginRight: -12,
+  marginTop: -10,
+},
+
+badge: {
+  position: "absolute",
+  top: -4,
+  right: -4,
+  backgroundColor: "red",
+  color: "white",
+  fontSize: 10,
+  zIndex: 10,
+},
 });

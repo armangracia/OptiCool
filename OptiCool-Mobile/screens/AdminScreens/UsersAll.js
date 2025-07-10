@@ -13,12 +13,14 @@ import { useSelector } from "react-redux";
 import { useFocusEffect } from "@react-navigation/native";
 import baseURL from "../../assets/common/baseUrl";
 import logActivity from "../../assets/common/logActivity";
+import { useDispatch } from "react-redux";
+import { setPendingCount } from "../../states/notificationSlice";
 
 const styles = StyleSheet.create({
   container: {
     padding: 16,
     backgroundColor: "white",
-    paddingBottom: 120, 
+    paddingBottom: 120,
   },
   title: {
     marginTop: 30,
@@ -80,6 +82,8 @@ const UsersRoute = ({
     (page + 1) * itemsPerPage
   );
   const totalPages = Math.ceil(users.length / itemsPerPage);
+
+  const dispatch = useDispatch();
 
   return (
     <View style={{ flex: 1 }}>
@@ -279,6 +283,7 @@ const PendingUsersRoute = ({
 };
 
 export default function UsersAll() {
+  const dispatch = useDispatch();
   const [users, setUsers] = useState([]);
   const [pagePending, setPagePending] = useState(0); // for pending users
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -304,11 +309,11 @@ export default function UsersAll() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const pending = data.users.filter((u) => !u.isApproved && !u.isDeleted);
+      dispatch(setPendingCount(pending.length)); // <-- Update badge globally
+      setPendingUsers(pending);
+      setBadgeCount(pending.length);
       setUsers(data.users.filter((u) => u.isApproved && !u.isDeleted));
-      setPendingUsers(data.users.filter((u) => !u.isApproved && !u.isDeleted));
-      setBadgeCount(
-        data.users.filter((u) => !u.isApproved && !u.isDeleted).length
-      );
 
       const trashRes = await axios.get(`${baseURL}/users/deleted`, {
         headers: { Authorization: `Bearer ${token}` },
