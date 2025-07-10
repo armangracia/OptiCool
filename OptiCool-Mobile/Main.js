@@ -27,7 +27,7 @@ import EditPosts from "./screens/AdminScreens/EditPosts"; // Ensure correct impo
 import HelpDetails from "./screens/AdminScreens/HelpDetails";
 import ReportDetails from "./screens/AdminScreens/ReportDetails"; // Ensure correct import
 import PostList from "./screens/AdminScreens/PostList"; // Ensure correct import
-import NotificationScreen from "./screens/NotificationScreen";
+import NotificationScreen from "./screens//MenuScreens/NotificationScreen";
 import DataExtraction from "./screens/AdminScreens/DataExtraction";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef } from "react";
@@ -121,6 +121,7 @@ export default function Main() {
           <Stack.Screen name="UsageNavigations" component={UsageNavigations} />
           <Stack.Screen name="MenuNavigation" component={MenuNavigation} />
           <Stack.Screen name="NotifScreen" component={NotifScreen} />
+          <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
           <Stack.Screen name="ActiveUsers" component={ActiveUsers} />
           <Stack.Screen name="ActivityLog" component={ActivityLog} />
           <Stack.Screen name="UsersAll" component={UsersAll} />

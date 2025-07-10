@@ -30,6 +30,7 @@ import StatusCard from "./HomeScreens/StatusCard";
 import MainRow from "./HomeScreens/MainRow";
 import DMT3ROOM from "../services/dmt3API";
 import dmt3API from "../services/dmt3API";
+import NotificationScreen from "./MenuScreens/NotificationScreen";
 // import UpButton from "../assets/common/UpButton";
 
 export default function Dashboard() {
@@ -245,13 +246,13 @@ export default function Dashboard() {
             />
           </TouchableOpacity>
         </View>
-        {/* <MaterialCommunityIcons
+        <MaterialCommunityIcons
           name="bell"
           size={24}
           color="#000000"
           onPress={() => navigation.navigate("NotificationScreen")} 
           style={styles.alertIconContainer}
-        /> */}
+        />
         {/* Dropdown Menu */}
         {isDropdownVisible && (
           <Modal
@@ -268,12 +269,12 @@ export default function Dashboard() {
               >
                 <Text style={styles.dropdownText}>View Profile</Text>
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={() => handleOptionSelect("Settings")}
                 style={styles.dropdownItem}
               >
                 <Text style={styles.dropdownText}>Settings</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity
                 onPress={() => handleOptionSelect("NotifScreen")}
                 style={styles.dropdownItem}
